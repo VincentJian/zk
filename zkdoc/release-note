@@ -43,8 +43,17 @@ ZK 6.5.1
   ZK-1428: Wrong order for item removed from ListModelList model
   ZK-1430: Listbox in Bandpopup of a Bandbox is not size correctly - "rows" is ignored.
   ZK-1370: org.zkoss.zul.Datebox.setDisplayedTimeZones(List dtzones) NPE if emptied
-
+  ZK-1437: javascript error when use include with auto mode
+  ZK-1442: ZK Bind command doesn't work with cluster env
+  ZK-1446: get NotSerializableException when using @Subscribe in tomcat cluster env.
+  ZK-1374: Unclosed BufferedReader for org.zkoss.util.media.ContentTypes
+  ZK-1441: Accordion Tabbox after rapid clicking on tabs start displaying content at fixed wrong hight.
+  
 * Upgrade Notes
+  + Decouple Flashchart component from zul.jar to flashchart.jar, due to Flashchart contains a potential
+   SWF vulnerability in YUI 2 that the SWF files in question contain a cross-site JavaScript injection
+   vulnerability which allows for the execution of arbitrary third-party code within the domain from which
+   the files are served. Please download the flashchart.jar from the link instead - https://github.com/zkoss/flashchart
 
   --------
 ZK 6.5.0
