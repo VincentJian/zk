@@ -81,6 +81,7 @@ it will be useful, but WITHOUT ANY WARRANTY.
 		origin.style.left = jq.px(origin.offsetLeft + el.offsetLeft - dg._wndoffs[0]);
 
 		document.body.style.cursor = "";
+		zWatch.fire('onMove'); //Bug ZK-1372: hide applet when overlapped
 	}
 	function _ignoremove(dg, pointer, evt) {
 		var el = dg.node,
@@ -118,8 +119,13 @@ it will be useful, but WITHOUT ANY WARRANTY.
 			$n = zk(n);
 		if (!pos && (!n.style.top || !n.style.left)) {
 			var xy = $n.revisedOffset();
-			n.style.left = jq.px(xy[0]);
-			n.style.top = jq.px(xy[1]);
+			//ZK-1391: use revisedOffset() only if style doesn't specify left/top value
+			if (!n.style.left) {
+				n.style.left = jq.px(xy[0]);
+			}
+			if (!n.style.top) {
+				n.style.top = jq.px(xy[1]);
+			}			
 		} else if (pos == "parent")
 			_posByParent(wgt);
 

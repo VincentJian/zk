@@ -483,17 +483,13 @@ implements Component, ComponentCtrl, java.io.Serializable {
  	}
 
 	private String nextUuid(Desktop desktop) {
-		Set<String> gened = null;
-		for (;;) {
+		for (int count = 0;;) {
 			String uuid = ((DesktopCtrl)desktop).getNextUuid(this);
 			if (desktop.getComponentByUuidIfAny(uuid) == null)
 				return uuid;
 
-			if (gened == null)
-				gened = new HashSet<String>();
-			if (!gened.add(uuid))
-				throw new UiException("UUID, "+uuid+", was generated repeatedly (cycle: "+gened.size()
-					+"), and still replicates with existent components. Please have a better ID generator.");
+			if (++count > 10000)
+				throw new UiException("It took too much time to look for unique UUID. Please check the implementation of IdGenerator.");
 		}
 	}
 	public String getId() {
@@ -2543,9 +2539,10 @@ w:use="foo.MyWindow"&gt;
 	 * @param c a collection of objects. Ignored if null.
 	 * @since 3.6.4
 	 */
+	@SuppressWarnings("unchecked")
 	protected void willPassivate(Collection<?> c) {
 		if (c != null)
-			for (Iterator it = c.iterator(); it.hasNext();)
+			for (Iterator it = new ArrayList(c).iterator(); it.hasNext();)
 				willPassivate(it.next());
 	}
 	/** Utility to invoke {@link ComponentActivationListener#willPassivate}
@@ -2563,9 +2560,10 @@ w:use="foo.MyWindow"&gt;
 	 * @param c a collection of objects. Ignored if null.
 	 * @since 3.6.4
 	 */
+	@SuppressWarnings("unchecked")
 	protected void didActivate(Collection<?> c) {
 		if (c != null)
-			for (Iterator it = c.iterator(); it.hasNext();)
+			for (Iterator it = new ArrayList(c).iterator(); it.hasNext();)
 				didActivate(it.next());
 	}
 	/** Utility to invoke {@link ComponentActivationListener#didActivate}

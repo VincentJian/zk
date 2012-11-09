@@ -1,8 +1,22 @@
   --------
+ZK 6.0.4
+* Features
+  
+* Bugs
+  ZK-1442 ZK Bind command doesn't work with cluster env
+  ZK-1454 Scrollbar forgets its position when switch tabs in Tabbox
+
+* Upgrade Notes
+  
+  --------
 ZK 6.0.3
+Oct 30, 2012
 * Features
   ZK-1301: The buttons in the Messagebox shall use autodisable
   ZK-1312: formattedNumber & formattedDate should use proper Locale & Timezone
+  ZK-1397: DefaultTreeNode support empty children mean leaf node
+  ZK-1248: Sub menu should not overlap its parent in menupopup
+  
 * Bugs
   ZK-1128: Use SerializableUiFactory with a portal environment will cause ClassCastException
   ZK-1303: listbox select mold with 1 rows onSelect event not fired for first item
@@ -17,6 +31,24 @@ ZK 6.0.3
   ZK-1268: ZK bind children throw Unsupported child exception
   ZK-1322: Issue on timebox with null value
   ZK-1313: combobox dropdown changes document scroll height on iPad
+  ZK-1348: First child tree node can't unfold sometimes
+  ZK-1341: Datebox in zh_TW locale with 'Long + Medium' format failed to assign correct value
+  ZK-1353: Datebox not work in Hebrew
+  ZK-1358: When I try to show a window with doOverlapped, doModal or doHighlighted my window don't appears
+  ZK-1347: Including Checkbox inside MVVM Form causes Error writing 'checked' on type org.zkoss.zul.Checkbox crash
+  ZK-1344: Collection binding will occur error when deleting entry
+  ZK-1372: zk.stackUp not work with Firefox
+  ZK-1368: the right edge of the textboxes split over to a new line when you specify a percentage width and set the mold to rounded
+  ZK-1383: The value of Map.Entry returned from ListModelMap.getElementAt() don't support Serializable
+  ZK-1380: Forward uri can't be "zk/*" on Tomcat 7
+  ZK-1259: zul with hashmap not load key from a fx
+  ZK-1381: Show busy on panel with borderlayout is not working
+  ZK-1337: RenderHttpServletRequest/RenderHttpServletResponse's getInstance() cause ServletException when passed to RequestDispather on Liferay 6.1 + JBoss 7.1
+  ZK-1377: Focus lost when tapping & change title value insides a window
+  ZK-1391: When a window is invisible at first, its top (or left) attribute takes no effect even we turn the window to be visible.
+  ZK-1400: Focus issue when Listbox in select mold after invalidate
+  ZK-1192: SelectorComposer ConcurrentModificationException in GAE
+  ZK-1424: Treeitem with a lot of childrens takes too long to open
 
 * Upgrade Notes
   + The default names of a composer will still be assigned no matter you set a composerName by custom-attributes or not.
@@ -432,6 +464,7 @@ ZK 5.0.12
 * Features
   ZK-1002: Remove script carrying ZK initialization code after mounted
 
+  
 * Bugs
   ZK-998: Uploading mp3 fails in 5.0.11
   ZK-1011: drag and drop in mobile safari throwing exceptions
@@ -451,6 +484,8 @@ ZK 5.0.12
   ZK-1092: IE 8 - Scrollbar Bug in Tree
   ZK-1230: Listbox with rod only removes the first list item when setItemInvalid
   ZK-1298: Can not set composer name with <custom-attributes>
+  ZK-1391: When a window is invisible at first, its top (or left) attribute takes no effect even we turn the window to be visible.
+  ZK-1400: Focus issue when Listbox in select mold after invalidate
   
 	--------
 ZK 5.0.11

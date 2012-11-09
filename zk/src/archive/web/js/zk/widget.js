@@ -256,6 +256,11 @@ it will be useful, but WITHOUT ANY WARRANTY.
 		}
 	}
 	function _bkRange(wgt) {
+		if (zk.ie && zk.cfrg) { //Bug ZK-1377
+			var cfrg = zk.cfrg;
+			delete zk.cfrg;
+			return cfrg;
+		}
 		return wgt.getInputNode && (wgt = wgt.getInputNode())
 			&& zk(wgt).getSelectionRange();
 	}
@@ -2890,7 +2895,7 @@ unbind_: function (skipper, after) {
 		if (sz.height !== undefined) {
 			if (sz.height == 'auto')
 				n.style.height = '';
-			else if (sz.height != '' || sz.height === 0) //bug #2943174, #2979776, ZK-1159
+			else if (sz.height != '' || (sz.height === 0 && !this.isFloating_())) //bug #2943174, #2979776, ZK-1159, ZK-1358
 				this.setFlexSizeH_(n, zkn, sz.height, isFlexMin);
 			else
 				n.style.height = this._height || '';
@@ -2898,7 +2903,7 @@ unbind_: function (skipper, after) {
 		if (sz.width !== undefined) {
 			if (sz.width == 'auto')
 				n.style.width = '';
-			else if (sz.width != '' || sz.width === 0) //bug #2943174, #2979776, ZK-1159
+			else if (sz.width != '' || (sz.width === 0 && !this.isFloating_())) //bug #2943174, #2979776, ZK-1159, ZK-1358
 				this.setFlexSizeW_(n, zkn, sz.width, isFlexMin);
 			else
 				n.style.width = this._width || '';
@@ -4879,8 +4884,18 @@ Object skip(zk.Widget wgt);
 	skip: function (wgt, skipId) {
 		var skip = jq(skipId || (wgt.uuid + '-cave'), zk)[0];
 		if (skip && skip.firstChild) {
+			var cf = zk.currentFocus,
+				iscf = cf && cf.getInputNode;
+			
+			if (iscf && zk.ie) //Bug ZK-1377 IE will lost input selection range after remove node
+				zk.cfrg = zk(cf.getInputNode()).getSelectionRange();
+			
 			skip.parentNode.removeChild(skip);
 				//don't use jq to remove, since it unlisten events
+			
+			if (iscf && zk.chrome) //Bug ZK-1377 chrome will lost focus target after remove node
+				zk.currentFocus = cf;
+			
 			return skip;
 		}
 	},
