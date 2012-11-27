@@ -31,13 +31,14 @@ public interface MessageLoader {
 	
 	/**
 	 * Load the message to output StringBuffer.
-	 * <p>There are two timing the ZK system will scan the <code>MessageLoader</code> setting and call this mehtod of corresponding instance.
+	 * <p>In the following two times, ZK system will scan the <code>MessageLoader</code> setting and 
+	 * invoke this mehtod of corresponding underlying instance to load the system messages.
 	 * <ol>
 	 * <li>{@link Wpds#outLocaleJavaScript(javax.servlet.ServletRequest, javax.servlet.ServletResponse)} (define in zul/lang/zk.wpd)</li>
 	 * <li>{@link Clients#reloadMessages(java.util.Locale)}</li>
 	 * </ol>
-	 * At first timing, execution will not have Desktop and Page instance, 
-	 * so programmer must notice that many Execution's method can't use.
+	 * For the firest time, execution does not have access to Desktop and Page instance. 
+	 * Hence, programmer must notice that they cannot use many of Execution's method.
 	 * </p>
 	 * @param out StringBuffer to output
 	 * @param exec current Execution
