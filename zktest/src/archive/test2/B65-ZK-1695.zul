@@ -1,0 +1,4 @@
+<zk>
+    <textbox id="input" value="test"/>
+    <button label="select" onClick="input.select()" />
+</zk>
