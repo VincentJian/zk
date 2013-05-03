@@ -325,7 +325,7 @@ zul.sel.Treeitem = zk.$extends(zul.sel.ItemWidget, {
 		this.$supers('onChildRemoved_', arguments);
 		if (child == this.treerow) {
 			this.treerow = null;
-			_syncTreeBodyHeight(this);
+		//	_syncTreeBodyHeight(this); ZK-360: fixed; ZK-1735: dont need to sync
 		} else if (child == this.treechildren) {
 			this.treechildren = null;
 			if (!this.childReplacing_) //NOT called by onChildReplaced_
@@ -339,7 +339,7 @@ zul.sel.Treeitem = zk.$extends(zul.sel.ItemWidget, {
 		else if (this.desktop)
             this._fixOnAdd(child, true); // fixed dynamically change treerow. B65-ZK-1608
 		if (this.desktop && child.$instanceof(zul.sel.Treerow)) {
-			_syncTreeBodyHeight(this);
+		//	_syncTreeBodyHeight(this); ZK-360: fixed; ZK-1735: dont need to sync
 		}
 		//else was handled by insertBefore/appendChild
 	},
@@ -377,8 +377,13 @@ zul.sel.Treeitem = zk.$extends(zul.sel.ItemWidget, {
 				var dom = tarWgt.$n();
 				if (this.isContainer()) { //Bug ZK-1733: Check if treechildren is rendered yet
 					var lastChild = tarWgt.treechildren.lastChild;
-					if (lastChild)
-						dom = lastChild.$n();
+					for (;lastChild; lastChild = lastChild.previousSibling) {
+						var n = lastChild.$n();
+						if (n) { //Bug ZK-1739: treerow may removed
+							dom = n;
+							break;
+						}
+					}
 				}
 				jq(dom).after(childHTML);
 				return;
@@ -395,8 +400,13 @@ zul.sel.Treeitem = zk.$extends(zul.sel.ItemWidget, {
 				var dom = tarWgt.$n();
 				if (this.isContainer()) { //Bug ZK-1733: Check if treechildren is rendered yet
 					var firstChild = this.treechildren.firstChild;
-					if (firstChild)
-						dom = firstChild.$n();
+					for (;firstChild; firstChild = firstChild.nextSibling) {
+						var n = firstChild.$n();
+						if (n) { //Bug ZK-1739: treerow may removed
+							dom = n;
+							break;
+						}
+					}
 				}
 				jq(dom).before(childHTML);
 				return;
@@ -410,16 +420,18 @@ zul.sel.Treeitem = zk.$extends(zul.sel.ItemWidget, {
 			else
 				w._renderChildHTML(childHTML);
 		} else if ((w = this.getTree())) {
-			var dom = w.$n('rows');
+			var tbody = w.$n('rows');
 			if (this.isContainer()) { //Bug ZK-1733: Check if treechildren is rendered yet
 				var firstChild = this.treechildren.firstChild;
 				if (firstChild) {
-					dom = firstChild.$n();
-					jq(dom).before(childHTML);
-					return;
+					var dom = firstChild.$n();
+					if (dom) { //Bug ZK-1739: treerow may removed
+						jq(dom).before(childHTML);
+						return;
+					}
 				}
 			}
-			jq(dom).append(childHTML);
+			jq(tbody).append(childHTML);
 		}
 	},
 	insertChildHTML_: function (child, before, desktop) {
