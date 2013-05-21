@@ -108,24 +108,15 @@ if="deploy.tomcat.required">
 <!-- ===== -->
 <target name="lessc">
 	<java classname="CpLess" fork="true">
-		<arg value="${src.archive.dir}/${zipjs}"/>
-		<arg value="${codegen.archive.dir}/${zipjs}"/>
+		<arg value="${src.archive.dir}"/>
+		<arg value="${codegen.archive.dir}"/>
 		<classpath>
 			<pathelement path="${src.archive.dir}"/>
 			<pathelement location="${dist.lib.ext.dir}/zkless.jar"/>
 			<pathelement location="${dist.lib.ext.dir}/lesscss-engine.jar"/>
-			<pathelement location="${dist.lib.ext.dir}/rhino.jar"/>
-			<pathelement location="${dist.lib.ext.dir}/commons-logging.jar"/>
-		</classpath>
-	</java>
-	<java classname="CpLess" fork="true">
-		<arg value="${src.archive.dir}/${zipcss}"/>
-		<arg value="${codegen.archive.dir}/${zipcss}"/>
-		<classpath>
-			<pathelement path="${src.archive.dir}"/>
-			<pathelement location="${dist.lib.ext.dir}/zkless.jar"/>
-			<pathelement location="${dist.lib.ext.dir}/lesscss-engine.jar"/>
-			<pathelement location="${dist.lib.ext.dir}/rhino.jar"/>
+			<pathelement location="${dist.lib.ext.dir}/js.jar"/>
+			<pathelement location="${dist.lib.ext.dir}/zkjszips.jar"/>
+		    <pathelement location="${dist.lib.ext.dir}/yuicompressor.jar"/>
 			<pathelement location="${dist.lib.ext.dir}/commons-logging.jar"/>
 		</classpath>
 	</java>
@@ -133,27 +124,30 @@ if="deploy.tomcat.required">
 <target name="zipjs">
 	<mkdir dir="${src.archive.dir}"/>
 	<mkdir dir="${codegen.archive.dir}"/>
-
 	<java classname="ZipJS" fork="true">
 		<arg value="${src.archive.dir}/${zipjs}"/>
 		<arg value="${codegen.archive.dir}/${zipjs}"/>
 		<arg value="true"/>
     	<jvmarg value="-Xss1024k"/>
 		<classpath>
-		   <pathelement location="${dist.lib.ext.dir}/zkjszips.jar"/>
-		   <pathelement location="${dist.lib.ext.dir}/yuicompressor.jar"/>
-		   <pathelement location="${dist.lib.ext.dir}/commons-io.jar"/>
+		    <pathelement location="${dist.lib.ext.dir}/zkjszips.jar"/>
+		    <pathelement location="${dist.lib.ext.dir}/yuicompressor.jar"/>
+		    <pathelement location="${dist.lib.ext.dir}/commons-io.jar"/>
 		</classpath>
 	</java>
-	   
+	
+	<delete>
+		<fileset dir="${codegen.archive.dir}" includes="**/*.css.dsp.src"/>
+	</delete>
+	
 	<java classname="ZipJS" fork="true">
 		<arg value="${src.archive.dir}/${zipcss}"/>
 		<arg value="${codegen.archive.dir}/${zipcss}"/>
     	<jvmarg value="-Xss1024k"/>
 		<classpath>
-		   <pathelement location="${dist.lib.ext.dir}/zkjszips.jar"/>
-		   <pathelement location="${dist.lib.ext.dir}/yuicompressor.jar"/>
-		   <pathelement location="${dist.lib.ext.dir}/commons-io.jar"/>
+		    <pathelement location="${dist.lib.ext.dir}/zkjszips.jar"/>
+		    <pathelement location="${dist.lib.ext.dir}/yuicompressor.jar"/>
+		    <pathelement location="${dist.lib.ext.dir}/commons-io.jar"/>
 		</classpath>
 	</java>
 </target>
@@ -164,7 +158,7 @@ if="deploy.tomcat.required">
 		<fileset dir="${out.dir}" excludes="${exclude.list}"/>
 		<fileset dir="${jar.srcpv.dir}" includes="zkPublicCert.store **/**.properties"/>
 		<fileset dir="${src.archive.dir}" includes="**"
-		 excludes="META-INF/MANIFEST.MF, ${zipjs}/**, ${zipcss}/**"/>
+		 excludes="META-INF/MANIFEST.MF, ${zipjs}/**, ${zipcss}/**, ${less}/**"/>
 		<fileset dir="${codegen.archive.dir}" includes="**"
 		 excludes="META-INF/MANIFEST.MF"/>
 	</jar>
@@ -174,7 +168,7 @@ if="deploy.tomcat.required">
 		<fileset dir="${out.dir}" excludes="${exclude.list}"/>
 		<fileset dir="${jar.srcpv.dir}" includes="zkPublicCert.store **/**.properties"/>
 		<fileset dir="${src.archive.dir}" includes="**"
-		 excludes="META-INF/MANIFEST.MF, ${zipjs}/**, ${zipcss}/**"/>
+		 excludes="META-INF/MANIFEST.MF, ${zipjs}/**, ${zipcss}/**, ${less}/**"/>
 		<fileset dir="${codegen.archive.dir}" includes="**"
 		 excludes="META-INF/MANIFEST.MF, **/*.src.js"/>
 	</jar>
