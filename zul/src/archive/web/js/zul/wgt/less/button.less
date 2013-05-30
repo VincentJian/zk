@@ -1,7 +1,4 @@
-<%@ taglib uri="http://www.zkoss.org/dsp/web/core" prefix="c" %>
-<%@ taglib uri="http://www.zkoss.org/dsp/web/theme" prefix="t" %>
-
-@import "~./zul/less/_import.less";
+@import "~./zul/less/_header.less";
 
 // Button Variables
 @buttonBorder:		#A6A6A6;
@@ -23,11 +20,11 @@
 	
 	&:hover {
 		border-color: @buttonBorderHover;
-		.buttonBackground(#E3F4FD, #C7E9F9);
+		.buttonBackground(rgba(227,244,253,0.0), #C7E9F9);
 	}
 	&:focus {
 		border-color: @buttonBorderFocus;
-		${t:boxShadow('inset 1px 1px 1px #0CBCFF, inset -1px -1px 1px #0CBCFF')};
+		.boxShadow('inset 1px 1px 1px #0CBCFF, inset -1px -1px 1px #0CBCFF');
 	}
 	&:active {
 		border-color: @buttonBorderActive;
@@ -37,7 +34,7 @@
 		opacity: .65;
 		border: 1px solid @buttonBorder;
 		.buttonBackground();
-		${t:boxShadow('none')};
+		.boxShadow('none');
 	}
 	img {
 		vertical-align: text-top;
