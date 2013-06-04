@@ -691,6 +691,7 @@ new zul.wnd.Window({
 		this._bklsns = {}; //backup for listners by setListeners
 		this._subnodes = {}; //store sub nodes for widget(domId, domNode)
 		this.effects_ = {};
+		this._subzcls = {}; // cache the zclass + subclass name, like zclass + '-hover'
 
 		//There are two ways to specify IdSpace at client
 		//1) Override $init and assign _fellows (e.g., Macro/Include/Window)
@@ -783,7 +784,8 @@ new zul.wnd.Window({
 		 * @see #getSclass
 		 * @see #getStyle
 		 */
-		zclass: function (){
+		zclass: function () {
+			this._subzcls = {}; // reset
 			this.rerender();
 		},
 		/** Sets the width of this widget.
@@ -1040,8 +1042,11 @@ new zul.wnd.Window({
 	setHflex_: function (v) {
 		this._nhflex = (true === v || 'true' == v) ? 1 : v == 'min' ? -65500 : zk.parseInt(v);
 		if (this._nhflex < 0 && v != 'min')
-			this._nhflex = 0; 
-		if (_binds[this.uuid] === this) { //if already bind
+			this._nhflex = 0;
+		if (this.desktop) { //ZK-1784 only update the components style when it is attached to desktop
+		                    //checking on (_binds[this.uuid] === this) as before does not work when 
+		                    //nested inside native component. in this case the nested component
+		                    //is bound earlier, when the native component is reused (mount.js create()) 
 			if (!this._nhflex) {
 				this.setFlexSize_({width: ''}); //clear the width
 				delete this._hflexsz;
@@ -2692,6 +2697,25 @@ function () {
 			this._nodeSolved = true;
 		}
 		return n;
+	},
+	/**
+	 * Returns the sub zclass name that cache for this widget.
+	 * It returns the zclass if the subclass is empty or null,
+	 * since it caches the result (and clean up at the {@link #setZclass()}).
+	 * <pre><code>var subzcls = wgt.$s('hover'); // z-xxx-hover will be return</code></pre>
+	 * @return String
+	 * @see #getZclass()
+	 * @since 7.0.0
+	 */
+	$s: function (subclass) {
+		if (subclass) {
+			var subcls = this._subzcls[subclass];
+			if (!subcls) {
+				subcls = this._subzcls[subclass] = this.getZclass() + '-' + subclass;
+			}
+			return subcls;
+		}
+		return this.getZclass();
 	},
 	/** Clears the cached nodes (by {@link #$n}). */
 	clearCache: function () {

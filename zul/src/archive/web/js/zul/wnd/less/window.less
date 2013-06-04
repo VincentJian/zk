@@ -1,0 +1,245 @@
+@import "~./zul/less/_header.less";
+
+@frameBackgroundColor: #D9E5EF;
+@contentBackgroundColor: white;
+@iconHoverBackgoundColor: #DFF2FC;
+@iconColor: #777777;
+
+.resetHeaderOuter() {
+	padding: 0px;
+	background-color: transparent;
+	border: 0;
+	.topBorderRadius('0px');
+	.defaultOverflowZoom();
+}
+
+.resetContentOuter() {
+	padding: 0px;
+	background-color: transparent;
+	border: 0;
+	.bottomBorderRadius('0px');
+	.defaultOverflowZoom();
+}
+
+.defaultOverflowZoom() {
+	overflow: hidden; zoom: 1;
+}
+
+.z-window {
+
+	.defaultOverflowZoom();
+	
+	&-header {
+		font-family: @baseTitleFontFamily;
+		font-size: @fontSizeMedium; font-weight: normal;
+		cursor: default;
+		background-color: @frameBackgroundColor;
+		color: #363636;
+		line-height: 24px;
+		padding-top: 2px;
+		padding-bottom: 6px;
+		.defaultOverflowZoom();
+		
+		&-outer {
+			.topBorderRadius();
+			border: 1px solid #9F9F9F;
+			border-bottom-width: 0px;  
+			padding: 5px;
+			padding-bottom: 0px;
+			background-color: @frameBackgroundColor;
+			.defaultOverflowZoom();
+		}
+		
+		&-move {
+			cursor: move;
+		}
+	}
+	
+	&-content {
+		margin: 0;
+		padding: 4px;
+		background-color: @contentBackgroundColor;
+		border: solid #ACACAC 1px;
+		.defaultOverflowZoom();
+	}
+	
+	&-icon {
+		background: transparent no-repeat 0 0;
+		overflow: hidden;
+		margin: auto 1px;
+		display: block;
+
+		&-img {
+			.buttonBackground();
+			.borderRadius();
+			border: 1px solid #CFCFCF;
+			float: right;
+			cursor: pointer;
+			margin: auto 1px;
+			text-align: center;
+			color: @iconColor;
+			
+			&:hover {
+				background-color: @iconHoverBackgoundColor;
+			}
+		}
+	}
+
+	&-maximize, &-minimize, &-close {
+		width: 28px;
+		height: 24px;
+	}
+	
+	&-close {
+		font-size: @fontSizeXLarge;
+	    line-height: 23px;
+	}
+	
+	&-maximize {
+		font-size: @fontSizeLarge;
+	}
+	
+	&-minimize {
+		font-size: @fontSizeLarge;
+		padding-top: 5px;
+	}
+	
+	&-resize-faker {
+		position: absolute;
+		border: 1px dashed #1854C2;
+		overflow: hidden;
+		z-index: 60000;
+		left: 0;
+		top: 0;
+		background-color: #D7E6F7;
+		filter: alpha(opacity=50); /* IE */
+		opacity: .5;
+	}
+	
+	&-move-ghost {
+		.topBorderRadius();
+		position: absolute;
+		background: #D7E6F7;
+		overflow: hidden;
+		filter: alpha(opacity=65) !important; /* IE */
+		opacity: .65 !important;
+		cursor: move !important;
+		
+		dl {
+			border: 1px solid #9F9F9F;
+			margin: 0; padding: 0;
+			overflow: hidden;
+			display: block;
+			background: #D7E6F7;
+			line-height: 0;
+			font-size: 0;
+		}
+	}
+	
+	&-overlapped&-shadow, &-popup&-shadow {
+		.borderRadius();
+		.boxShadow('0 0 3px rgba(0, 0, 0, 0.5)');
+	}
+	
+	&-modal&-shadow, &-highlighted&-shadow {
+		.borderRadius();
+		.boxShadow('0 0 4px rgba(0, 0, 0, 0.7)');
+	}
+	
+	&-embedded-header {
+		& a, & a:visited, & a:hover {
+			color: #222222;
+		}
+	}
+	
+	&-embedded&-shadow {
+		.boxShadow('none');
+	}
+	
+	&-modal > &-content-outer,
+	&-overlapped > &-content-outer,
+	&-highlighted > &-content-outer,
+	&-embedded > &-content-outer {
+		.bottomBorderRadius();
+		border: 1px solid #9F9F9F;
+		border-top-width: 0px;  
+		padding: 5px;
+		padding-top: 0px;
+		background-color: @frameBackgroundColor;
+		.defaultOverflowZoom();
+	}
+	
+	&-embedded > &-header-outer {
+		.topBorderRadius('0px');
+	}
+	 
+	&-embedded > &-content-outer {
+		.bottomBorderRadius('0px');
+	}
+	
+	&-popup&-noheader > &-header-outer {
+		.resetHeaderOuter();
+	}
+	
+	&-noborder > &-content-outer > &-content {
+		margin: 0;
+		padding: 4px;
+		background-color: @contentBackgroundColor;
+		border: 0;
+		.defaultOverflowZoom();
+	}
+	
+	&-noborder > &-content-outer {
+		.resetContentOuter();
+	}
+	
+	&-noborder&-noheader > &-header-outer {
+		.resetHeaderOuter();
+	}
+
+}
+
+.z-messagebox {
+	&-window.z-window-modal > .z-window-content-outer > .z-window-content, 
+	&-window.z-window-highlighted > .z-window-content-outer > .z-window-content {
+		padding: 17px;
+		padding-bottom: 15px;
+	}
+	
+	& .z-label {
+		font-family: @baseContentFontFamily;
+		font-size: @fontSizeMedium;
+		color: #363636;
+	}
+	
+	&-button {
+		min-width: 48pt;
+		width: 100%;
+	}	
+}
+
+.z-msgbox {
+	display: inline-block;
+	background-repeat: no-repeat;
+	vertical-align: top;
+	cursor: pointer;
+	border: 0;
+	width: 32px;
+	height: 32px;
+	
+	&-question {
+		.encodeThemeURL(background-image, '~./zul/img/msgbox/question-btn.png');
+	}
+	
+	&-exclamation {
+		.encodeThemeURL(background-image, '~./zul/img/msgbox/warning-btn.png');
+	}
+	
+	&-information {
+		.encodeThemeURL(background-image, '~./zul/img/msgbox/info-btn.png');
+	}
+	
+	&-error {
+		.encodeThemeURL(background-image, '~./zul/img/msgbox/stop-btn.png');
+	}
+}
