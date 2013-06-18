@@ -416,12 +416,14 @@ zul.box.Box = zk.$extends(zul.Widget, {
 		//bug 3010663: boxes do not resize when browser window is resized
 		var p = this.$n(),
 			zkp = zk(p),
-			offhgh = p.offsetHeight,
-			offwdh = p.offsetWidth,
-			curhgh = this._vflexsz !== undefined ? this._vflexsz - zkp.sumStyles('tb', jq.margins) : offhgh,
-			curwdh = this._hflexsz !== undefined ? this._hflexsz - zkp.sumStyles('lr', jq.margins) : offwdh,
-			hgh = zkp.revisedHeight(curhgh < offhgh ? curhgh : offhgh),
-			wdh = zkp.revisedWidth(curwdh < offwdh ? curwdh : offwdh);
+			hgh = this._vflexsz !== undefined ? 
+					this._vflexsz - zkp.padBorderHeight() - zkp.sumStyles("tb", jq.margins)
+					// B50-ZK-286: subtract scroll bar width
+					: zkp.contentHeight(true)  - (zkp.hasHScroll() ? jq.scrollbarWidth() : 0),
+			wdh = this._hflexsz !== undefined ?
+					this._hflexsz - zkp.padBorderWidth() - zkp.sumStyles("lr", jq.margins)
+					// B50-ZK-286: subtract scroll bar width
+					: zkp.contentWidth(true) - (zkp.hasVScroll() ? jq.scrollbarWidth() : 0);
 		return zkp ? {height: hgh, width: wdh} : {};
 	},
 	//Bug ZK-1569: add minium 1px width on <td> to pass isWatchable_
@@ -550,12 +552,16 @@ zul.box.Box = zk.$extends(zul.Widget, {
 			var cwgt = vflexs.shift(), 
 				vsz = (cwgt._nvflex * hgh / vflexsz) | 0, //cast to integer
 				//B50-3014664.zul offtop = cwgt.$n().offsetTop,
-				isz = vsz;// B50-3014664.zul vsz - ((zk.ie && offtop > 0) ? (offtop * 2) : 0); 
-			cwgt.setFlexSize_({height:isz});
-			cwgt._vflexsz = vsz;
+				isz = vsz;// B50-3014664.zul vsz - ((zk.ie && offtop > 0) ? (offtop * 2) : 0);
+
+			var chdex = cwgt.$n('chdex'),
+				$chdex = zk(chdex),
+				 minus = $chdex.padBorderHeight();
+			
+			cwgt.setFlexSize_({height:isz - minus});
+			cwgt._vflexsz = vsz - minus;
 			if (!cwgt.$instanceof(zul.wgt.Cell)) {
-				var chdex = cwgt.$n('chdex');
-				chdex.style.height = jq.px0(zk(chdex).revisedHeight(vsz, true));
+				chdex.style.height = jq.px0($chdex.revisedHeight(vsz, true));
 			}
 			if (vert) lastsz -= vsz;
 		}
@@ -565,11 +571,13 @@ zul.box.Box = zk.$extends(zul.Widget, {
 				// B50-3014664.zul offtop = cwgt.$n().offsetTop,
 				isz = lastsz;// B50-3014664.zul - ((zk.ie && offtop > 0) ? (offtop * 2) : 0);
 
-			cwgt.setFlexSize_({height:isz});
-			cwgt._vflexsz = lastsz;
+			var chdex = cwgt.$n('chdex'),
+				$chdex = zk(chdex),
+				minus = $chdex.padBorderHeight();
+			cwgt.setFlexSize_({height:isz - minus});
+			cwgt._vflexsz = lastsz - minus;
 			if (!cwgt.$instanceof(zul.wgt.Cell)) {
-				var chdex = cwgt.$n('chdex');
-				chdex.style.height = jq.px0(zk(chdex).revisedHeight(lastsz, true));
+				chdex.style.height = jq.px0($chdex.revisedHeight(lastsz, true));
 			}
 		}
 		
@@ -579,22 +587,27 @@ zul.box.Box = zk.$extends(zul.Widget, {
 		for (var j = hflexs.length - 1; j > 0; --j) {
 			var cwgt = hflexs.shift(), //{n: node, f: hflex} 
 				hsz = (cwgt._nhflex * wdh / hflexsz) | 0; //cast to integer
-			cwgt.setFlexSize_({width:hsz});
-			cwgt._hflexsz = hsz;
+
+			var chdex = cwgt.$n('chdex'),
+				$chdex = zk(chdex),
+				minus = $chdex.padBorderWidth();
+			cwgt.setFlexSize_({width:hsz - minus});
+			cwgt._hflexsz = hsz - minus;
 			if (!cwgt.$instanceof(zul.wgt.Cell)) {
-				var chdex = cwgt.$n('chdex');
-				chdex.style.width = jq.px0(zk(chdex).revisedWidth(hsz, true));
+				chdex.style.width = jq.px0($chdex.revisedWidth(hsz, true));
 			}
 			if (!vert) lastsz -= hsz;
 		}
 		//last one with hflex
 		if (hflexs.length) {
 			var cwgt = hflexs.shift();
-			cwgt.setFlexSize_({width:lastsz});
-			cwgt._hflexsz = lastsz;
+			var chdex = cwgt.$n('chdex'),
+				$chdex = zk(chdex),
+				minus = $chdex.padBorderWidth();
+			cwgt.setFlexSize_({width:lastsz - minus});
+			cwgt._hflexsz = lastsz - minus;
 			if (!cwgt.$instanceof(zul.wgt.Cell)) {
-				var chdex = cwgt.$n('chdex');
-				chdex.style.width = jq.px0(zk(chdex).revisedWidth(lastsz, true));
+				chdex.style.width = jq.px0($chdex.revisedWidth(lastsz, true));
 			}
 		}
 		
