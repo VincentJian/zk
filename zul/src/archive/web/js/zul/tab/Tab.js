@@ -234,10 +234,16 @@ zul.tab.Tab = zk.$extends(zul.LabelImageWidget, {
 	},
 	domContent_: function () {
 		var label = zUtl.encodeXML(this.getLabel()),
-			img = this.getImage();
+			img = this.getImage(),
+			iconSclass = this.domIcon_();
+		
 		if (!label) label = '&nbsp;';
-		if (!img) return label;
-		img = '<img src="' + img + '" align="absmiddle" class="' + this.getZclass() + '-img"/>';
+		if (!img && !iconSclass) return label;
+		if (!img) {
+			img = iconSclass;
+		} else
+			img = '<img src="' + img + '" class="' + this.$s('image') + '"/>'
+			+ (iconSclass ? ' ' + iconSclass : '');
 		return label ? img + ' ' + label: img;
 	},
 	//bug #3014664
@@ -249,23 +255,11 @@ zul.tab.Tab = zk.$extends(zul.LabelImageWidget, {
 	setHflex: function (v) { //hflex ignored for Tab
 		if (v != 'min') v = false;
 		this.$super(zul.tab.Tab, 'setHflex', v);
-	},	
-	_doCloseOver: function(e) {
-		if(e.domTarget == this.$n('close') || e.domTarget == this.$n('icon-close')) {
-			jq(this.$n()).removeClass(this.$s('hover'));
-		} else {
-			jq(this.$n()).addClass(this.$s('hover'));
-		}
-	},
-	_doCloseOut: function(e) {
-		jq(this.$n()).removeClass(this.$s('hover'));
 	},
 	bind_: function (desktop, skipper, after) {
 		this.$supers(zul.tab.Tab, 'bind_', arguments);
 		var closebtn = this.isClosable() ? this.$n('close') : null,
 			tab = this;
-		this.domListen_(tab, 'onMouseOver', '_doCloseOver');
-		this.domListen_(tab, 'onMouseOut', '_doCloseOut');
 		if (closebtn) {
 			this.domListen_(closebtn, 'onClick', '_doCloseClick');			
 		}
@@ -294,8 +288,6 @@ zul.tab.Tab = zk.$extends(zul.LabelImageWidget, {
 	},
 	unbind_: function () {
 		var closebtn = this.$n('close');
-		this.domUnlisten_(this, 'onMouseOver', '_doCloseOver');
-		this.domUnlisten_(this, 'onMouseOut', '_doCloseOut');
 		// ZK-886
 		_logId(this);
 		if (closebtn) {

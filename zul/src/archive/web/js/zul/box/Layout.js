@@ -167,17 +167,14 @@ zul.box.Layout = zk.$extends(zk.Widget, {
 		//bug 3010663: boxes do not resize when browser window is resized
 		var p = this.$n(),
 			zkp = zk(p),
-			offhgh = p.offsetHeight,
-			offwdh = p.offsetWidth,
-			curhgh = this._vflexsz !== undefined ? this._vflexsz - zkp.sumStyles("tb", jq.margins) : offhgh,
-			curwdh = this._hflexsz !== undefined ? this._hflexsz - zkp.sumStyles("lr", jq.margins) : offwdh;
-		// B50-ZK-286: subtract scroll bar width
-		if (zkp.hasHScroll())
-			offhgh -= jq.scrollbarWidth();
-		if (zkp.hasVScroll())
-			offwdh -= jq.scrollbarWidth();
-		var hgh = zkp.revisedHeight(curhgh < offhgh ? curhgh : offhgh),
-			wdh = zkp.revisedWidth(curwdh < offwdh ? curwdh : offwdh);
+			hgh = this._vflexsz !== undefined ? 
+					this._vflexsz - zkp.padBorderHeight() - zkp.sumStyles("tb", jq.margins)
+					// B50-ZK-286: subtract scroll bar width
+					: zkp.contentHeight(true)  - (zkp.hasHScroll() ? jq.scrollbarWidth() : 0),
+			wdh = this._hflexsz !== undefined ?
+					this._hflexsz - zkp.padBorderWidth() - zkp.sumStyles("lr", jq.margins)
+					// B50-ZK-286: subtract scroll bar width
+					: zkp.contentWidth(true) - (zkp.hasVScroll() ? jq.scrollbarWidth() : 0);
 		return zkp ? {height: hgh, width: wdh} : {};
 	},
 	//bug#3296056
@@ -277,14 +274,16 @@ zul.box.Layout = zk.$extends(zk.Widget, {
 					if (cwgt._vflex == 'min') {
 						cwgt.fixMinFlex_(c, 'h');
 						var h = c.offsetHeight + zkc.sumStyles('tb', jq.margins) + zkxc.paddingHeight(); //Bug ZK-1577: should consider padding size
-						cp.style.height = jq.px0(zkxc.revisedHeight(h));
+						cp.style.height = jq.px0(h);
 						if (vert)
 							hgh -= cp.offsetHeight + zkxc.sumStyles('tb', jq.margins);
 					} else {
 						vflexs.push(cwgt);
 						if (vert) {
 							vflexsz += cwgt._nvflex;
-							hgh = zkxc.revisedHeight(hgh, true); //bug#3157031: remove chdex's padding, border, margin
+							
+							//bug#3157031: remove chdex's padding, border, margin
+							hgh = hgh - zkxc.sumStyles('tb', jq.margins);
 						}
 					}
 				} else if (vert)
@@ -304,7 +303,9 @@ zul.box.Layout = zk.$extends(zk.Widget, {
 						hflexs.push(cwgt);
 						if (!vert) {
 							hflexsz += cwgt._nhflex;
-							wdh = zkxc.revisedWidth(wdh, true); //bug#3157031: remove chdex's padding, border, margin
+							
+							//bug#3157031: remove chdex's padding, border, margin
+							wdh = wdh - zkxc.sumStyles('lr', jq.margins); 
 						}
 					}
 				} else if (!vert)
@@ -321,10 +322,11 @@ zul.box.Layout = zk.$extends(zk.Widget, {
 				offtop = cwgt.$n().offsetTop,
 				isz = vsz - ((zk.ie && offtop > 0) ? (offtop * 2) : 0);
 
-			cwgt.setFlexSize_({height:isz});
-			cwgt._vflexsz = vsz;
+			var chdex = cwgt.$n('chdex'),
+				minus = zk(chdex).padBorderHeight();
+			cwgt.setFlexSize_({height:isz - minus});
+			cwgt._vflexsz = vsz - minus;
 
-			var chdex = cwgt.$n('chdex');
 			chdex.style.height = jq.px0(vsz);
 			if (vert) lastsz -= vsz;
 		}
@@ -333,9 +335,11 @@ zul.box.Layout = zk.$extends(zk.Widget, {
 			var cwgt = vflexs.shift(),
 				offtop = cwgt.$n().offsetTop,
 				isz = lastsz - ((zk.ie && offtop > 0) ? (offtop * 2) : 0);
-			cwgt.setFlexSize_({height:isz});
-			cwgt._vflexsz = lastsz;
-			var chdex = cwgt.$n('chdex');
+
+			var chdex = cwgt.$n('chdex'),
+				minus = zk(chdex).padBorderHeight();
+			cwgt.setFlexSize_({height:isz - minus});
+			cwgt._vflexsz = lastsz - minus;
 			chdex.style.height = jq.px0(lastsz);
 		}
 		//setup the width for the hflex child
@@ -344,21 +348,24 @@ zul.box.Layout = zk.$extends(zk.Widget, {
 		while (hflexs.length > 1) {
 			var cwgt = hflexs.shift(), //{n: node, f: hflex}
 				hsz = (vert ? wdh : (cwgt._nhflex * wdh / hflexsz)) || 0; //cast to integer
-			cwgt.setFlexSize_({width:hsz});
-			cwgt._hflexsz = hsz;
 
-			var chdex = cwgt.$n('chdex');
+			var chdex = cwgt.$n('chdex'),
+				minus = zk(chdex).padBorderWidth();
+			cwgt.setFlexSize_({width:hsz - minus});
+			cwgt._hflexsz = hsz - minus;
+
 			chdex.style.width = jq.px0(hsz);
 
 			if (!vert) lastsz -= hsz;
 		}
 		//last one with hflex
 		if (hflexs.length) {
-			var cwgt = hflexs.shift();
-			cwgt.setFlexSize_({width:lastsz});
-			cwgt._hflexsz = lastsz;
+			var cwgt = hflexs.shift(),
+				chdex = cwgt.$n('chdex'),
+				minus = zk(chdex).padBorderWidth();
+			cwgt.setFlexSize_({width:lastsz - minus});
+			cwgt._hflexsz = lastsz - minus;
 
-			var chdex = cwgt.$n('chdex');
 			chdex.style.width = jq.px0(lastsz);
 		}
 
