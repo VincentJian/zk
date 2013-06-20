@@ -365,7 +365,8 @@ public class Servlets {
 	}
 	private static void browserInfo(Map<String, Object> zk, String ua) {
 		if (ua != null) {
-			ua = ua.toLowerCase();
+			// ZK-1822: In locale Turkish, it can prevent 'I'.toLowerCase becomes 'i' without dot.
+			ua = ua.toLowerCase(Locale.ENGLISH); 
 			if (_clientId != null) {
 				final ClientIdentifier ci = _clientId.matches(ua);
 				if (ci != null) {
