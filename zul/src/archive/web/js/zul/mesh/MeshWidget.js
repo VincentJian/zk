@@ -388,7 +388,7 @@ it will be useful, but WITHOUT ANY WARRANTY.
 			var d = dst.cells[j], s = src.cells[j];
 			if (zk.opera) {
 				sum += s.offsetWidth;
-				d.style.width = zk(s).revisedWidth(s.offsetWidth);
+				d.style.width = zk(s).contentWidth();
 			} else {
 				d.style.width = s.offsetWidth + 'px';
 				if (maxnc > 1) { //don't handle single cell case (bug 1729739)
@@ -904,15 +904,16 @@ zul.mesh.MeshWidget = zk.$extends(zul.Widget, {
 			this._shallSize = false;
 		}
 	},
-	_vflexSize: function (hgh) {
-		var n = this.$n(), pgHgh = 0;
+	_vflexSize: function () {
+		var n = this.$n(),
+			pgHgh = 0;
 		if (this.paging) {
 			var pgit = this.$n('pgit'),
 				pgib = this.$n('pgib');
 			if (pgit) pgHgh += pgit.offsetHeight;
 			if (pgib) pgHgh += pgib.offsetHeight;
 		}
-		return zk(n).revisedHeight(n.offsetHeight)
+		return zk(n).contentHeight()
 			- (this.ehead ? this.ehead.offsetHeight : 0)
 			- (this.efoot ? this.efoot.offsetHeight : 0)
 			- pgHgh; // Bug #1815882 and Bug #1835369
@@ -942,21 +943,20 @@ zul.mesh.MeshWidget = zk.$extends(zul.Widget, {
 	},
 	/* set the height. */
 	_setHgh: function (hgh) {
-		var ebody = this.ebody,
+		var n = this.$n(),
+			ebody = this.ebody,
 			ebodyStyle = ebody.style;
 		if (this.isVflex() || (hgh && hgh != 'auto' && hgh.indexOf('%') < 0)) {
-			if (zk.safari && ebodyStyle.height == jq.px(this._vflexSize(hgh)))
+			if (zk.safari && ebodyStyle.height == jq.px(this._vflexSize()))
 				return; // Bug ZK-417, ignore to set the same size
-			
 			ebodyStyle.height = ''; //allow browser adjusting to default size
-			var h = this._vflexSize(hgh);
+			var h = this._vflexSize();
 			if (h < 0)
 				h = 0;
 			if (this._vflex != 'min')
 				ebodyStyle.height = h + 'px';
 		} else {
 			//Bug 1556099
-			var n = this.$n();
 			ebodyStyle.height = '';
 			n.style.height = hgh;
 		}
@@ -973,8 +973,8 @@ zul.mesh.MeshWidget = zk.$extends(zul.Widget, {
 		//note: we don't solve this bug for paging yet
 		var n = this.$n();
 		
-		//Bug 1659601: we cannot do it in init(); or, IE failed!
-		var tblwd = this._getEbodyWd(),
+			//Bug 1659601: we cannot do it in init(); or, IE failed!
+			tblwd = zk(n).contentWidth(),
 			sizedByContent = this.isSizedByContent(),
 			ehead = this.ehead,
 			ebody = this.ebody,
@@ -1009,9 +1009,6 @@ zul.mesh.MeshWidget = zk.$extends(zul.Widget, {
 		n._lastsz = {height: n.offsetHeight, width: n.offsetWidth}; // cache for the dirty resizing.
 		
 		this._afterCalcSize();
-	},
-	_getEbodyWd: function () {
-		return this.ebody.offsetWidth + zk(this.$n()).padBorderWidth();
 	},
 	_beforeCalcSize: function () {
 		this._setHgh(this.$n().style.height);
@@ -1056,7 +1053,7 @@ zul.mesh.MeshWidget = zk.$extends(zul.Widget, {
 		}
 		return allwidths;
 	},
-	domFaker_: function (out, fakeId, zcls) { //used by redraw
+	domFaker_: function (out, fakeId) { //used by redraw
 		var head = this.head;
 		out.push('<colgroup id="', head.uuid, fakeId, '">');
 		for (var w = head.firstChild; w; w = w.nextSibling) {
