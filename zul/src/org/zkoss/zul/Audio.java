@@ -32,6 +32,7 @@ import org.zkoss.zul.impl.Utils;
  * An audio clip.
  *
  * <p>An extension to XUL.
+ * Only works for browsers supporting HTML5 audio tag (since ZK 7.0.0).
  *
  * @author tomyeh
  */
@@ -103,38 +104,25 @@ public class Audio extends XulElement {
 			smartUpdate("src", new EncodedSrc());
 		}
 	}
-	
-	private List<String> getEncodedSrc() {
-		final Desktop dt = getDesktop();
-		List<String> list = new ArrayList<String>();
-		if(_audio != null) {
-			list.add(getAudioSrc());
-		} else if (dt != null) {
-			for(String src: _src) {
-				list.add(dt.getExecution().encodeURL(src));
-			}
-		}
-		return list;
-	}
 
 	/** Returns whether to auto start playing the audio.
 	 *
 	 * <p>Default: false;
-	 * @deprecated As of release 7.0.0, use {@link #isAutoplay()} instead.
+	 * @deprecated As of release 7.0.0, use {@link #isAutoplay} instead.
 	 */
 	public boolean isAutostart() {
 		return isAutoplay();
 	}
 	/** Sets whether to auto start playing the audio.
 	 * 
-	 * @deprecated As of release 7.0.0, use {@link #setAutoplay()} instead.
+	 * @deprecated As of release 7.0.0, use {@link #setAutoplay} instead.
 	 */
 	public void setAutostart(boolean autostart) {
 		setAutoplay(autostart);
 	}
 	/** Returns whether to auto start playing the audio.
 	 *
-	 * <p>Default: false;
+	 * <p>Default: false.
 	 * @since 7.0.0
 	 */
 	public boolean isAutoplay() {
@@ -151,15 +139,16 @@ public class Audio extends XulElement {
 		}
 	}
 	/** Returns whether and how the audio should be loaded.
-	 *
-	 * <p>Default: false;
+	 * "none" or "metadata" or "auto" or null
+	 * <p>Default: null.
 	 * @since 7.0.0
 	 */
 	public String getPreload() {
 		return _preload;
 	}
 	/** Sets whether and how the audio should be loaded.
-	 * 
+	 * Refer to <a href="http://www.w3.org/TR/html5/embedded-content-0.html#attr-media-preload">Preload Attribute Description</a> for details.
+	 * @param preload which could be one of "none", "metadata", "auto".
 	 * @since 7.0.0
 	 */
 	public void setPreload(String preload) {
@@ -177,7 +166,7 @@ public class Audio extends XulElement {
 	}
 	/** Returns whether to display the audio controls.
 	 *
-	 * <p>Default: false;
+	 * <p>Default: false.
 	 * @since 7.0.0
 	 */
 	public boolean isControls() {
@@ -194,7 +183,7 @@ public class Audio extends XulElement {
 	}
 	/** Returns whether to play the audio repeatedly.
 	 *
-	 * <p>Default: false;
+	 * <p>Default: false.
 	 * @since 3.6.1
 	 */
 	public boolean isLoop() {
@@ -212,7 +201,7 @@ public class Audio extends XulElement {
 	}
 	/** Returns whether to mute the audio.
 	 *
-	 * <p>Default: false;
+	 * <p>Default: false.
 	 * @since 7.0.0
 	 */
 	public boolean isMuted() {
@@ -253,6 +242,19 @@ public class Audio extends XulElement {
 	 */
 	public org.zkoss.sound.Audio getContent() {
 		return _audio;
+	}
+	
+	private List<String> getEncodedSrc() {
+		final Desktop dt = getDesktop();
+		List<String> list = new ArrayList<String>();
+		if(_audio != null) {
+			list.add(getAudioSrc());
+		} else if (dt != null) {
+			for(String src: _src) {
+				list.add(dt.getExecution().encodeURL(src));
+			}
+		}
+		return list;
 	}
 
 	/** Returns the encoded URL for the current audio content.
