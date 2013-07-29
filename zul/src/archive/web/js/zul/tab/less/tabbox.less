@@ -38,11 +38,11 @@
 			padding: 4px 5px 2px 5px;
 		}
 
-		&-close {
-			top: 4px;
-			left: 3px;
+		&-button {
+			top: 0;
+			left: 4px;
 			& + .z-tab-text {
-				padding-right: 5px;
+				padding-right: 4px;
 				padding-left: 20px;
 			}
 		}
@@ -52,7 +52,7 @@
 			.boxShadow('1px 0px 0 #FFFFFF');
 			background: none;
 
-			.z-tab-close {
+			.z-tab-button {
 				.opacity(1.0);
 			}
 
@@ -160,25 +160,25 @@
 
 	&-accordion {
 
-		.z-tabpanels {
+		> .z-tabpanels {
 			border: 0;
 			border-top: 1px solid @baseBorderColor;
 			line-height: @baseButtonHeight;			
 		}
 
 		.z-tabpanel {
-			padding: 0px;
+			padding: 0;
 			border: 0;
-
-			&-content {
-				padding: 5px;
-				zoom: 1;
-				border: 1px solid @baseBorderColor;
-				border-top: 0;
-			}
 		}
 
-		.z-tab {
+		.z-tabpanel > .z-tabpanel-content {
+			padding: 5px;
+			zoom: 1;
+			border: 1px solid @baseBorderColor;
+			border-top: 0;			
+		}
+
+		.z-tabpanel > .z-tab {
 			.verGradient();
 			.borderRadius('0px');
 			display: block;
@@ -195,11 +195,8 @@
 			font-size: @fontSizeMedium;
 			line-height: @baseButtonHeight + 6;
 
-			&-icon {
+			> &-button {
 				.userSelect();
-			}
-
-			&-close {
 				.opacity(0.6);
 				cursor: pointer;
 				display: block;
@@ -221,7 +218,7 @@
 				}
 			}
 
-			&-text {
+			> &-text {
 				color: @textColorGray;
 				font-weight: bold;
 				text-decoration: none;
@@ -234,21 +231,17 @@
 				line-height: @baseButtonHeight;
 			}
 
-			&-image {
-				vertical-align: middle;
-			}
-
 			&-selected {
 				.verGradient();
 				.boxShadow('none');
 				cursor: default;
 
-				.z-tab-close {
+				.z-tab-button {
 					.opacity(0.8);
+				}
 
-					& + .z-tab-text {
-						font-weight: bold;
-					}
+				.z-tab-text {
+					font-weight: bold;
 				}
 			}
 
@@ -257,7 +250,7 @@
 				cursor: default;
 				.disabledOpacity();
 
-				.z-tab-close:hover {
+				.z-tab-button:hover {
 					.disabledOpacity();
 				}
 
@@ -324,11 +317,11 @@
 			border-width: 1px 1px 1px 0px;
 			.rightBorderRadius();
 
-			&-close {
+			&-button {
 				left: auto;
 
 				& + .z-tab-text {
-					padding-left: 5px;
+					padding-left: 4px;
 					padding-right: 20px;
 				}
 			}
@@ -468,7 +461,12 @@
 	cursor: pointer;
 
 	&-icon {
-		.userSelect();
+		position: relative;
+		line-height: normal;
+		margin-top: -6px;
+		top: 50%;
+		display: block;
+		cursor: pointer;
 	}
 
 	&-text {
@@ -486,21 +484,21 @@
 		vertical-align: middle;
 	}
 
-	&-close {
-		cursor: pointer;
+	&-button {
+		.userSelect();
 		display: block;
 		width: @baseIconWidth - 1;
-		height: @baseIconHeight - 1;
+		height: 100%;
 		position: absolute;
 		font-size: @fontSizeMedium;
-		right: 3px;
-		top: 4px;
+		right: 4px;
+		top: 0;
 		z-index: 15;
 		.opacity(0.8);
 		zoom: 1;
 		color: @iconColor;
 		text-align: center;
-		line-height: @baseButtonHeight;
+		line-height: normal;
 
 		&:hover {
 			color: @iconHoverColor;
@@ -515,12 +513,16 @@
 		display:none;
 	}
 
+	.z-caption {
+		margin: auto;
+	}
+
 	&-selected {
 		.resetGradient();
 		background: @baseBackgroundColor;
 		.boxShadow('0 1px 0 #FFFFFF');
 
-		.z-tab-close {
+		.z-tab-button {
 			.opacity(1.0);
 
 			& + .z-tab-text {
@@ -535,7 +537,7 @@
 		cursor: default;
 		.disabledOpacity();
 
-		.z-tab-close:hover {
+		.z-tab-button:hover {
 			.disabledOpacity();
 		}
 
