@@ -16,7 +16,6 @@ Copyright (C) 2013 Potix Corporation. All Rights Reserved.
 			bar = wgt.$n(orient),
 			embed = wgt.$n(orient + '-embed'),
 			style;
-		
 		if (bar) {
 			style = bar.style;
 			style.display = isHide ? 'none' : 'block';
@@ -196,7 +195,7 @@ zul.Scrollbar = zk.$extends(zk.Object, {
 			var indicator = this.$n('hor-indicator'),
 				wwdh = wrapper.offsetWidth,
 				iwdh = Math.round(wwdh * wdh / swdh),
-				iwdh = iwdh > 20 ? iwdh : 20;
+				iwdh = iwdh > 15 ? iwdh : 15;
 			
 			indicator.style.width = iwdh + 'px';
 			if (embed)
@@ -204,7 +203,13 @@ zul.Scrollbar = zk.$extends(zk.Object, {
 			//sync scroller position limit
 			this.hLimit = swdh - wdh;
 			//sync scroll-bar indicator position limit
-			this.hBarLimit = wwdh - iwdh;
+			var limit = wwdh - iwdh;
+			if (limit <= 0) {
+				this.hBarLimit = 0;
+				indicator.style.display = 'none';
+			} else {
+				this.hBarLimit = limit;
+			}
 			//sync indicator/scroller width ratio
 			this.hRatio = Math.abs(this.hLimit / this.hBarLimit);
 			hbar.style.display = 'none'; // for calculate size
@@ -239,7 +244,7 @@ zul.Scrollbar = zk.$extends(zk.Object, {
 			var indicator = this.$n('ver-indicator'),
 				whgh = wrapper.offsetHeight,
 				ihgh = Math.round(whgh * hgh / shgh),
-				ihgh = ihgh > 20 ? ihgh : 20;
+				ihgh = ihgh > 15 ? ihgh : 15;
 			
 			indicator.style.height = ihgh + 'px';
 			if (embed)
@@ -247,7 +252,13 @@ zul.Scrollbar = zk.$extends(zk.Object, {
 			//sync scroller position limit
 			this.vLimit = shgh - hgh;
 			//sync scroll-bar indicator position limit
-			this.vBarLimit = whgh - ihgh;
+			var limit = whgh - ihgh;
+			if (limit <= 0) {
+				this.vBarLimit = 0;
+				indicator.style.display = 'none';
+			} else {
+				this.vBarLimit = limit;
+			}
 			//sync indicator/scroller width ratio
 			this.vRatio = Math.abs(this.vLimit / this.vBarLimit);
 			vbar.style.display = 'none'; // for calculate size
@@ -261,14 +272,14 @@ zul.Scrollbar = zk.$extends(zk.Object, {
 	},
 	scrollTo: function (x, y) {
 		if (this.needH) {
-			x = _setScrollPos(x, this.hLimit, 0);
+			x = _setScrollPos(x, 0, this.hLimit);
 			var barPos = x / this.hRatio;
 			this._syncPosition('hor', x);
 			this._syncBarPosition('hor', barPos);
 			this._syncEmbedBarPosition('hor', x + barPos);
 		}
 		if (this.needV) {
-			y = _setScrollPos(y, this.vLimit, 0);
+			y = _setScrollPos(y, 0, this.vLimit);
 			var barPos = y / this.vRatio;
 			this._syncPosition('ver', y);
 			this._syncBarPosition('ver', barPos);
@@ -634,18 +645,12 @@ zul.Scrollbar = zk.$extends(zk.Object, {
 					var isLeftDown = point > barPos,
 						min, max, bPos;
 					
-					//left/down: -rstep, right/up:-rstep
-					if (isHor) {
-						min = isLeftDown ? pointlimit : pos;
-						max = isLeftDown ? pos : pointlimit;
-						pos += (isLeftDown ? -rstep : rstep);
-					} else {
-						min = isLeftDown ? pos : pointlimit;
-						max = isLeftDown ? pointlimit : pos;
-						pos += (isLeftDown ? rstep : -rstep);
-					}
+					min = isLeftDown ? pos : pointlimit;
 					min = min < 0 ? 0 : min;
+					max = isLeftDown ? pointlimit : pos;
 					max = max > limit ? limit : max;
+					//left/down: rstep, right/up: -rstep
+					pos += (isLeftDown ? rstep : -rstep);
 					//set and check if exceed scrolling limit
 					pos = _setScrollPos(pos, min, max);
 					bPos = pos/ratio;
