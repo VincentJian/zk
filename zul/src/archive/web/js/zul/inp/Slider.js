@@ -20,7 +20,7 @@ it will be useful, but WITHOUT ANY WARRANTY.
 		wgt.updateFormData(wgt._curpos);
 		
 		var isVertical = wgt.isVertical(),
-			ofs = zk(wgt.getRealNode()).cmOffset(),
+			ofs = zk(wgt.$n()).cmOffset(),
 			totalLen = isVertical ? wgt._getHeight(): wgt._getWidth(),
 			x = totalLen > 0 ? Math.round((wgt._curpos * totalLen) / wgt._maxpos) : 0;
 			
@@ -52,8 +52,8 @@ it will be useful, but WITHOUT ANY WARRANTY.
  */
 zul.inp.Slider = zk.$extends(zul.Widget, {
 	_orient: 'horizontal',
-	_height: '207px',
-	_width: '207px',
+	_height: '200px',
+	_width: '200px',
 	_curpos: 0,
 	_maxpos: 100,
 	_pageIncrement: 10,
@@ -146,14 +146,14 @@ zul.inp.Slider = zk.$extends(zul.Widget, {
 		}
 	},
 	domClass_: function() {
-		var scls = this.$supers('domClass_', arguments);
-		
-		scls = scls ? scls : 'z-slider';
-		scls += ('horizontal' == this._orient ? '' : ' ' +  this.$s('vertical'));
-		if (this.inScaleMold()) 
-			scls += ' ' + this.$s('scale');
+		var scls = this.$supers('domClass_', arguments),
+			isVertical = this.isVertical();
+		if (isVertical)
+			scls += ' ' + this.$s('vertical');
 		if (this.inSphereMold())
             scls += ' ' + this.$s('sphere');
+		else if (this.inScaleMold() && !isVertical) 
+			scls += ' ' + this.$s('scale');
 			
 		return scls;
 	},
@@ -195,7 +195,7 @@ zul.inp.Slider = zk.$extends(zul.Widget, {
 			nextPos.top = jq.px0(height);
 		if (!isVertical && zk.parseInt(nextPos.left) > width)
 			nextPos.left = jq.px0(width);
-		$btn.animate(_getNextPos(this, offset), 'slow', function() {
+		$btn.animate(nextPos, 'slow', function() {
 			pos = moveToCursor ? wgt._realpos(): wgt._curpos;
 			if (pos > wgt._maxpos) 
 				pos = wgt._maxpos;
@@ -279,7 +279,7 @@ zul.inp.Slider = zk.$extends(zul.Widget, {
 	},
 	_realpos: function(dg) {
 		var btnofs = zk(this.$n("btn")).revisedOffset(),
-			refofs = zk(this.getRealNode()).revisedOffset(),
+			refofs = zk(this.$n()).revisedOffset(),
 			maxpos = this._maxpos,
 			pos;
 		if (this.isVertical()) {
@@ -289,46 +289,35 @@ zul.inp.Slider = zk.$extends(zul.Widget, {
 			var wd = this._getWidth();
 			pos = wd ? Math.round(((btnofs[0] - refofs[0]) * maxpos) / wd) : 0;
 		}
-		// B65-ZK-1884: curpos should not be greater then maxpos
-		return this._curpos = (pos >= 0 ? (pos > maxpos ? maxpos : pos ) : 0);
+		return this._curpos = (pos >= 0 ? pos : 0);
 	},
 	_getWidth: function() {
-		return this.getRealNode().clientWidth - this.$n('btn').offsetWidth + 7;
+		return this.$n().clientWidth - this.$n('btn').offsetWidth;
 	},
 	_getHeight: function() {
-		return this.getRealNode().clientHeight - this.$n('btn').offsetHeight + 7;
+		return this.$n().clientHeight - this.$n('btn').offsetHeight;
 	},
-	_fixHgh: function() {
+	_fixSize: function() {
+		var n = this.$n(),
+			inners = this.$n("inner").style,
+			btns = this.$n("btn").style;
 		if (this.isVertical()) {
-			this.$n('btn').style.top = '0px';
-			var inner = this.$n('inner'), 
-				het = this.getRealNode().clientHeight;
-			if (het > 0) 
-				inner.style.height = (het + 7) + 'px';
-			else 
-				inner.style.height = '214px';
-		}
-	},	
-	_fixWdh: function() {
-		if (!this.isVertical()) {
-			this.$n('btn').style.left = '0px';
-			var inner = this.$n('inner'), 
-				wd = this.getRealNode().clientWidth;
-			if (wd > 0) 
-				inner.style.width = (wd + 7) + 'px';
-			else 
-				inner.style.width = '214px';
+			btns.top = jq.px0(0);
+			var het = n.clientHeight;
+			inners.height = het > 0 ? jq.px0(het) : this._width;
+		} else { 
+			btns.left = jq.px0(0);
+			var wd = n.clientWidth;
+			inners.width = wd > 0 ? jq.px0(wd) : this._height;
 		}
 	},
 	_fixPos: function() {
 		this.$n('btn').style[this.isVertical()? 'top': 'left'] = jq.px0(_getBtnNewPos(this));
 	},
 	onSize: function() {
-		this._fixHgh();
-		this._fixWdh();
+		this._fixSize();
 		this._fixPos();
 	},
-
 	/** Return whether this widget in scale mold
 	 * @return boolean
 	 */
@@ -356,12 +345,9 @@ zul.inp.Slider = zk.$extends(zul.Widget, {
 				this.efield.value = val;
 		}
 	},
-	getRealNode: function () {
-		return this.inScaleMold() && this.isVertical() ? this.$n('real') : this.$n();
-	},
 	bind_: function() {
 		this.$supers(zul.inp.Slider, 'bind_', arguments);
-		this._fixHgh();
+		this._fixSize();
 		this._makeDraggable();
 		
 		zWatch.listen({onSize: this});

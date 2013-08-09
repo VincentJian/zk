@@ -48,7 +48,7 @@ public class Slider extends XulElement {
 
 	
 	public Slider() {
-		setWidth("207px");
+		setWidth("200px");
 	}
 	/**
 	 * @param curpos the current position (default: 0)
