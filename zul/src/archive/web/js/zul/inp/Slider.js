@@ -289,7 +289,7 @@ zul.inp.Slider = zk.$extends(zul.Widget, {
 			var wd = this._getWidth();
 			pos = wd ? Math.round(((btnofs[0] - refofs[0]) * maxpos) / wd) : 0;
 		}
-		return this._curpos = (pos >= 0 ? pos : 0);
+		return this._curpos = (pos >= btnofs/2 * -1 ? pos : btnofs/2 * -1);
 	},
 	_getWidth: function() {
 		return this.$n().clientWidth - this.$n('btn').offsetWidth;
@@ -299,16 +299,16 @@ zul.inp.Slider = zk.$extends(zul.Widget, {
 	},
 	_fixSize: function() {
 		var n = this.$n(),
-			inners = this.$n("inner").style,
-			btns = this.$n("btn").style;
+			btn = this.$n('btn'),
+			inners = this.$n('inner').style;
 		if (this.isVertical()) {
-			btns.top = jq.px0(0);
+			btn.style.top = '-' + btn.offsetHeight / 2 + 'px';
 			var het = n.clientHeight;
-			inners.height = het > 0 ? jq.px0(het) : this._width;
+			inners.height = het > 0 ? jq.px0(het) : this._height - btn.offsetHeight;
 		} else { 
-			btns.left = jq.px0(0);
+			btn.style.left = '-' + btn.offsetWidth / 2 + 'px';
 			var wd = n.clientWidth;
-			inners.width = wd > 0 ? jq.px0(wd) : this._height;
+			inners.width = wd > 0 ? jq.px0(wd) : this._width - btn.offsetWidth;
 		}
 	},
 	_fixPos: function() {
