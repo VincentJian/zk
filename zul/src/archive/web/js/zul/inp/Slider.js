@@ -289,7 +289,7 @@ zul.inp.Slider = zk.$extends(zul.Widget, {
 			var wd = this._getWidth();
 			pos = wd ? Math.round(((btnofs[0] - refofs[0]) * maxpos) / wd) : 0;
 		}
-		return this._curpos = (pos >= btnofs/2 * -1 ? pos : btnofs/2 * -1);
+		return this._curpos = (pos >= 0 ? pos : 0);
 	},
 	_getWidth: function() {
 		return this.$n().clientWidth - this.$n('btn').offsetWidth;
