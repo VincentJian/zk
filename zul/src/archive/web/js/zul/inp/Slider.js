@@ -57,7 +57,7 @@ zul.inp.Slider = zk.$extends(zul.Widget, {
 	_curpos: 0,
 	_maxpos: 100,
 	_pageIncrement: 10,
-	_slidingtext: '{0}',
+	_slidingtext: '0',
 	_pageIncrement: -1,
 	
 	$define: {
@@ -100,11 +100,11 @@ zul.inp.Slider = zk.$extends(zul.Widget, {
 			}
 		},
 		/** Returns the sliding text.
-		 * <p>Default : "{0}"
+		 * <p>Default : "0"
 		 * @return String
 		 */
 		/** Sets the sliding text.
-		 * The syntax "{0}" will be replaced with the position at client side.
+		 * The syntax "0" will be replaced with the position at client side.
 		 * @param String slidingtext
 		 */
 		slidingtext: null,
@@ -263,7 +263,7 @@ zul.inp.Slider = zk.$extends(zul.Widget, {
 				pos = widget._maxpos;
 			widget.slidepos = pos;
 			if (widget.slidetip) 
-				widget.slidetip.innerHTML = widget._slidingtext.replace(/\{0\}/g, pos);
+				widget.slidetip.innerHTML = widget._slidingtext = pos;
 			widget.fire('onScrolling', pos);
 		}
 		widget._fixPos();
@@ -289,7 +289,7 @@ zul.inp.Slider = zk.$extends(zul.Widget, {
 			var wd = this._getWidth();
 			pos = wd ? Math.round(((btnofs[0] - refofs[0]) * maxpos) / wd) : 0;
 		}
-		return this._curpos = (pos >= 0 ? pos : 0);
+		return this._curpos = pos > 0 ? pos : 0;
 	},
 	_getWidth: function() {
 		return this.$n().clientWidth - this.$n('btn').offsetWidth;

@@ -39,7 +39,7 @@ public class Slider extends XulElement {
 	private int _curpos, _maxpos = 100, _pginc = -1;
 	/** The name. */
 	private String _name;
-	private String _slidingtext = "{0}";
+	private String _slidingtext = "0";
 
 	static {
 		addClientEvent(Slider.class, Events.ON_SCROLL, CE_IMPORTANT | CE_DUPLICATE_IGNORE);
@@ -99,7 +99,7 @@ public class Slider extends XulElement {
 	}
 	/**
 	 * Returns the sliding text.
-	 * <p>Default : "{0}"
+	 * <p>Default : "0"
 	 * @since 3.0.1
 	 */
 	public String getSlidingtext() {
@@ -108,12 +108,12 @@ public class Slider extends XulElement {
 	
 	/**
 	 * Sets the sliding text.
-	 * The syntax "{0}" will be replaced with the position at client side.
+	 * The syntax "0" will be replaced with the position at client side.
 	 * @since 3.0.1
 	 */
 	public void setSlidingtext(String slidingtext) {		
 		if (slidingtext == null || slidingtext.length() == 0)
-			slidingtext = "{0}";
+			slidingtext = "0";
 		if (!_slidingtext.equals(slidingtext)) {
 			_slidingtext = slidingtext;
 			smartUpdate("slidingtext", _slidingtext);
