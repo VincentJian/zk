@@ -19,7 +19,7 @@
 	
 	&-head {
 		padding: 5px 5px 1px;
-		border: 1px solid @outerBorderColor;
+		border: 1px solid @headerBorderColor;
 		.boxShadow('inset 0px 1px 1px #FFFFFF');
 		background: @panelBackgroundColor;
 		overflow: hidden;
@@ -45,9 +45,9 @@
 	
 	&-body {
 		margin: 0;
-		background: lighten(@panelBackgroundColor, 4%);
+		background: @panelBodyBackground;
 		padding: 6px 3px 6px 3px;
-		border: 1px solid @outerBorderColor;
+		border: 1px solid @bodyBorderColor;
 		border-top-width: 0;
 		.bottomBorderRadius();
 		.defaultOverflowZoom();
@@ -62,14 +62,14 @@
 	}
 	
 	&-top .z-toolbar,
-	&-bottom2 .z-toolbar,
+	&-footer .z-toolbar,
 	&-bottom .z-toolbar {
 		border-width: 0 1px 1px 1px;
 		padding: 4px 3px 3px 3px;
 	}
 
 	&-top .z-toolbar.z-toolbar-panel,
-	&-bottom2 .z-toolbar.z-toolbar-panel {
+	&-footer .z-toolbar.z-toolbar-panel {
 		border-width: 0px;
 		padding: 4px;
 	}
@@ -79,7 +79,9 @@
 		margin: auto 1px;
 		cursor: pointer;
 		display: block;
-		.verGradient();
+		<c:if test="${zk.ie != 8}">
+			.verGradient();
+		</c:if>
 		.borderRadius();
 		border: 1px solid @baseBorderColor;
 		float: right;
@@ -93,11 +95,6 @@
 			color: @iconHoverColor;
 		}
 
-		<c:if test="${zk.ie == 8}">
-		.z-icon-minus, .z-icon-fullscreen {
-			margin-left: 1px;			
-		}
-		</c:if>
 	}
 	
 	&-maximize, &-minimize, &-close, &-expand {
@@ -144,7 +141,7 @@
 		.z-panel-body {
 			padding: 0;
 		}
-
+		
 		<c:if test="${zk.ie == 8}">
 		.z-panel-icon {
 			.opacity(1);
@@ -179,7 +176,7 @@
 	}
 	
 	&-noheader &-body {
-		border-top: 1px solid @baseBorderColor;
+		border-top: 1px solid @bodyBorderColor;
 		.borderRadius();
 	}
 	
@@ -207,4 +204,12 @@
 	border: 1px solid @baseBorderColor;
 	position: relative;
 	.defaultOverflowZoom();
+}
+
+.ie8 .z-panel-icon {
+	.gradientFallback();
+
+	.z-icon-minus, .z-icon-fullscreen {
+		margin-left: 1px;			
+	}
 }

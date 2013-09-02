@@ -65,6 +65,9 @@ td.z-splitter-outer {
 }
 .z-splitter-vertical {
 	max-height: @splitterSize;
+	<c:if test="${zk.ie == 8}">
+		max-height: @splitterSize - 2;
+	</c:if>
 	height: @splitterSize;
 	border-width: 1px 0;
 	cursor: s-resize;
@@ -113,7 +116,7 @@ tr.z-splitter-outer > td {
 		left: 2px;
 		cursor: e-resize;
 		<c:if test="${zk.ie == 8}">
-			font-size: 14px;
+			font-size: @baseFontSize;
 		</c:if>
 	}
 	.z-splitter-icon.z-icon-ellipsis-vertical ~
@@ -138,7 +141,7 @@ tr.z-splitter-outer > td {
 		cursor: s-resize;
 		<c:if test="${zk.ie == 8}">
 			top: -3px;
-			font-size: 14px;
+			font-size: @baseFontSize;
 		</c:if>
 	}
 	.z-splitter-icon.z-icon-ellipsis-horizontal ~
