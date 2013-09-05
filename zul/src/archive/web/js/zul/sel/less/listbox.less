@@ -24,7 +24,9 @@
 		position: relative;
 		overflow: hidden;
 		width: 100%;
-		.verGradient();
+		<c:if test="${zk.ie != 8}">
+			.verGradient();
+		</c:if>
 	}
 	&-header-border {
 		position: relative;
@@ -78,7 +80,7 @@
 	</c:if>
 	&-hover {
 		<c:if test="${zk.ie != 8}">
-			.verGradient(@hoverGradientStart, @hoverGradientEnd);
+			.verGradient(@tableTitleHoverStart, @tableTitleHoverEnd);
 		</c:if>
 	}
 	&-sort {
@@ -98,10 +100,10 @@
 	&-checkable {
 		width: @baseIconWidth;
 		height: @baseIconHeight;
-		border: 1px solid @baseBorderColor;
+		border: 1px solid @checkedBorderColor;
 		display: inline-block;
 		vertical-align: text-top;
-		.verGradient();
+		background: @checkedBackgroundColor;
 		.z-listheader-icon {
 			display: none;
 			cursor: default;
@@ -110,7 +112,7 @@
 			display: block;
 			line-height: @baseLineHeight;
 			padding-left: 1px;
-			color: @textColorBlue;
+			color: @checkedColor;
 		}
 	}
 	&-button {
@@ -125,11 +127,13 @@
 		line-height: @baseBarHeight;
 		text-decoration: none;
 		text-align: center;
-		border-left: 1px solid darken(@hoverGradientStart, 15%);
+		border-left: 1px solid darken(@tableTitleHoverStart, 15%);
 		.boxShadow('inset 1px 0 #FFFFFF');
 		color: @iconColor;
 		&:hover {
-			.verGradient(darken(@hoverGradientStart, 5%), darken(@hoverGradientEnd, 10%));
+			<c:if test="${zk.ie != 8}">
+				.verGradient(darken(@tableTitleHoverStart, 5%), darken(@tableTitleHoverEnd, 10%));
+			</c:if>
 		}
 	}
 	&-sizing,
@@ -150,21 +154,27 @@
 		overflow: hidden;
 		cursor: pointer;
 	}
-	&:hover > .z-listcell {
-		<c:if test="${zk.ie != 8}">
-			.verGradient(@hoverGradientStart, @hoverGradientEnd);
-		</c:if>
-		background-clip: padding-box;
-		position: relative;
+	&:hover {
+		> .z-listcell {
+			<c:if test="${zk.ie != 8}">
+				.verGradient(@tableContentHoverStart, @tableContentHoverEnd);
+			</c:if>
+			border-color: @tableContentHoverStart;
+			background-clip: padding-box;
+			position: relative;
+		}
+		.z-listcell-content {
+			color: @hoverColor;
+		}
 	}
 	//check mark
 	&-checkable {
 		width: @baseIconWidth;
 		height: @baseIconHeight;
-		border: 1px solid @baseBorderColor;
+		border: 1px solid @checkedBorderColor;
 		display: inline-block;
 		vertical-align: text-top;
-		.verGradient();
+		background: @checkedBackgroundColor;
 		&.z-listitem-radio {
 			.borderRadius(8px);
 		}
@@ -179,14 +189,24 @@
 			<c:if test="${zk.ie != 8}">
 				.verGradient(@selectedGradientStart, @selectedGradientEnd);
 			</c:if>
+			border-color: @selectedGradientStart;
 			background-clip: padding-box;
 			position: relative;
 		}
-		&:hover > .z-listcell {
-			<c:if test="${zk.ie != 8}">
-				.verGradient(@selectedHoverGradientStart, @selectedHoverGradientEnd);
-			</c:if>
-			position: relative;
+		.z-listcell-content {
+			color: @selectedColor;
+		}
+		&:hover {
+			> .z-listcell {
+				<c:if test="${zk.ie != 8}">
+					.verGradient(@selectedHoverGradientStart, @selectedHoverGradientEnd);
+				</c:if>
+				border-color: @selectedHoverGradientStart;
+				position: relative;
+			}
+			.z-listcell-content {
+				color: @selectedHoverColor;
+			}
 		}
 	}
 	//selected check mark
@@ -327,11 +347,18 @@
 }
 // IE8
 .ie8 {
+	.z-listbox-header {
+		background: @baseGradientEnd;
+	}
 	.z-listheader {
 		position: static;
 		background: @baseGradientEnd;
 		&-hover {
-			background: @hoverGradientEnd;
+			background: @tableTitleHoverEnd;
+		}
+
+		&-button:hover {
+			background: darken(@hoverGradientEnd, 5%);
 		}
 	}
 	.z-listitem {
@@ -341,7 +368,7 @@
 		&.z-listitem-selected {
 			.z-listcell {
 				position: static;
-				background: @selectedGradientEnd;
+				background: @tableContentHoverEnd;
 			}
 			&:hover > .z-listcell {
 				position: static;

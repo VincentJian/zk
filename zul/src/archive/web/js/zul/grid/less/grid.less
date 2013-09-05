@@ -24,7 +24,9 @@
 		position: relative;
 		overflow: hidden;
 		width: 100%;
-		.verGradient();
+		<c:if test="${zk.ie != 8}">
+			.verGradient();
+		</c:if>
 	}
 	&-header-border {
 		position: relative;
@@ -77,17 +79,19 @@
 	border-left: 1px solid @tableTitleBorderColor;
 	border-bottom: 1px solid @tableTitleBorderColor;
 	position: relative;
+	overflow: hidden;
 	<c:if test="${zk.ie != 8}">
 		.verGradient();
 	</c:if>
+
 	&-hover {
 		<c:if test="${zk.ie != 8}">
-			.verGradient(@hoverGradientStart, @hoverGradientEnd);
+			.verGradient(@tableTitleHoverStart, @tableTitleHoverEnd);
 		</c:if>
+		.z-column-button {
+			display: block;
+		}
 	}
-}
-.z-column {
-	overflow: hidden;
 	.z-column-content {
 		position: relative;
 	}
@@ -102,9 +106,6 @@
 			color: @iconColor;
 		}
 	}
-	&-hover .z-column-button {
-		display: block;
-	}
 	&-button {
 		display: none;
 		position: absolute;
@@ -117,11 +118,13 @@
 		line-height: @baseBarHeight;
 		text-decoration: none;
 		text-align: center;
-		border-left: 1px solid darken(@hoverGradientStart, 15%);
+		border-left: 1px solid darken(@tableTitleHoverStart, 15%);
 		.boxShadow('inset 1px 0 #FFFFFF');
 		color: @iconColor;
 		&:hover {
-			.verGradient(darken(@hoverGradientStart, 5%), darken(@hoverGradientEnd, 10%));
+			<c:if test="${zk.ie != 8}">
+				.verGradient(darken(@tableTitleHoverStart, 5%), darken(@tableTitleHoverEnd, 10%));
+			</c:if>
 		}
 	}
 	&-sizing,
@@ -144,10 +147,14 @@
 		> .z-row-inner,
 		> .z-cell {
 			<c:if test="${zk.ie != 8}">
-				.verGradient(@hoverGradientStart, @hoverGradientEnd);
+				.verGradient(@tableContentHoverStart, @tableContentHoverEnd);
 			</c:if>
+			border-color: @tableContentHoverStart;
 			background-clip: padding-box;
 			position: relative;
+		}
+		.z-row-content {
+			color: @hoverColor;
 		}
 	}
 }
@@ -253,18 +260,25 @@
 }
 // IE 8
 .ie8 {
+	.z-grid-header {
+		background: @baseGradientEnd;
+	}
 	.z-column {
 		position: static;
 		background: @baseGradientEnd;
 		&-hover {
-			background: @hoverGradientEnd;
+			background: @tableTitleHoverEnd;
+		}
+
+		&-button:hover {
+			background: darken(@hoverGradientEnd, 5%);
 		}
 	}
 	.z-row:hover {
 		> .z-row-inner,
 		> .z-cell {
 			position: static;
-			background: @hoverGradientEnd;
+			background: @tableContentHoverEnd;
 		}
 	}
 	.z-group-inner {

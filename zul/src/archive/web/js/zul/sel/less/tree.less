@@ -24,7 +24,9 @@
 		position: relative;
 		overflow: hidden;
 		width: 100%;
-		.verGradient();
+		<c:if test="${zk.ie != 8}">
+			.verGradient();
+		</c:if>
 	}
 	&-header-border {
 		position: relative;
@@ -104,7 +106,9 @@
 	&-sort {
 		cursor: pointer;
 		&:hover {
-			.verGradient(@hoverGradientStart, @hoverGradientEnd);
+			<c:if test="${zk.ie != 8}">
+				.verGradient(@tableTitleHoverStart, @tableTitleHoverEnd);
+			</c:if>
 		}
 	}
 	&-sizing,
@@ -119,21 +123,26 @@
 		overflow: hidden;
 		cursor: pointer;
 	}
-	&:hover > .z-treecell {
-		<c:if test="${zk.ie != 8}">
-			.verGradient(@hoverGradientStart, @hoverGradientEnd);
-		</c:if>
-		background-clip: padding-box;
-		position: relative;
+	&:hover {
+		> .z-treecell {
+			<c:if test="${zk.ie != 8}">
+				.verGradient(@tableContentHoverStart, @tableContentHoverEnd);
+			</c:if>
+			background-clip: padding-box;
+			position: relative;
+		}
+		.z-treecell-content {
+			color: @hoverColor;
+		}
 	}
 	//check mark
 	&-checkable {
 		width: @baseIconWidth;
 		height: @baseIconHeight;
-		border: 1px solid @baseBorderColor;
+		border: 1px solid @checkedBorderColor;
 		display: inline-block;
 		vertical-align: middle;
-		.verGradient();
+		background: @checkedBackgroundColor;
 		&.z-treerow-radio {
 			.borderRadius(8px);
 		}
@@ -151,10 +160,18 @@
 			background-clip: padding-box;
 			position: relative;
 		}
-		&:hover > .z-treecell {
-			<c:if test="${zk.ie != 8}">
-				.verGradient(@selectedHoverGradientStart, @selectedHoverGradientEnd);
-			</c:if>
+		.z-treecell-content {
+			color: @selectedColor;
+		}
+		&:hover {
+			> .z-treecell {
+				<c:if test="${zk.ie != 8}">
+					.verGradient(@selectedHoverGradientStart, @selectedHoverGradientEnd);
+				</c:if>
+			}
+			.z-listcell-content {
+				color: @selectedHoverColor;
+			}
 		}
 	}
 	//selected check mark
@@ -225,16 +242,19 @@
 }
 // IE8
 .ie8 {
+	.z-tree-header {
+		background: @baseGradientEnd;
+	}
 	.z-treecol {
 		position: static;
 		background: @baseGradientEnd;
-		&-hover {
-			background: @hoverGradientEnd;
+		&-hover, &-sort:hover {
+			background: @tableTitleHoverEnd;
 		}
 	}
 	.z-treerow {
 		&:hover > .z-treecell {
-			background: @hoverGradientEnd;
+			background: @tableContentHoverEnd;
 		}
 		&.z-treerow-selected {
 			.z-treecell {
