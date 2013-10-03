@@ -16,13 +16,16 @@ Copyright (C) 2005 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zul;
 
-import java.lang.reflect.Method;
+import static org.zkoss.lang.Generics.cast;
+
 import java.io.IOException;
 import java.io.Writer;
+import java.lang.reflect.Method;
 import java.util.AbstractCollection;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -31,20 +34,17 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.Comparator;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.zkoss.io.Serializables;
-import org.zkoss.lang.Exceptions;
-import static org.zkoss.lang.Generics.*;
-
 import org.zkoss.lang.Classes;
+import org.zkoss.lang.Exceptions;
 import org.zkoss.lang.Library;
 import org.zkoss.lang.Objects;
-import org.zkoss.util.logging.Log;
 import org.zkoss.xel.VariableResolver;
 import org.zkoss.zk.au.AuRequests;
 import org.zkoss.zk.ui.Component;
-import org.zkoss.zk.ui.Executions;
 import org.zkoss.zk.ui.Page;
 import org.zkoss.zk.ui.UiException;
 import org.zkoss.zk.ui.WebApps;
@@ -56,9 +56,8 @@ import org.zkoss.zk.ui.event.Events;
 import org.zkoss.zk.ui.event.SelectEvent;
 import org.zkoss.zk.ui.event.SerializableEventListener;
 import org.zkoss.zk.ui.util.ComponentCloneListener;
-import org.zkoss.zk.ui.util.Template;
 import org.zkoss.zk.ui.util.ForEachStatus;
-import org.zkoss.zul.event.ListDataEvent;
+import org.zkoss.zk.ui.util.Template;
 import org.zkoss.zul.event.PageSizeEvent;
 import org.zkoss.zul.event.PagingEvent;
 import org.zkoss.zul.event.RenderEvent;
@@ -162,6 +161,10 @@ import org.zkoss.zul.impl.XulElement;
  * <dt>org.zkoss.zul.tree.initRodSize</dt>. 
  * <dd>Specifies the number of items rendered when the Tree first render.
  * 
+ * <dt>org.zkoss.zul.tree.maxRodPageSize</dt>. 
+ * <dd>Specifies how many pages (of treeitems) to keep rendered in memory
+ *  (on the server side) when navigating the tree using pagination. (Paging mold only)
+ * 
  * <dt>org.zkoss.zul.tree.preloadSize</dt>. 
  * <dd>Specifies the number of items to preload when receiving
  * the rendering request from the client.
@@ -172,7 +175,7 @@ import org.zkoss.zul.impl.XulElement;
  * @author tomyeh
  */
 public class Tree extends MeshElement {
-	private static final Log log = Log.lookup(Tree.class);
+	private static final Logger log = LoggerFactory.getLogger(Tree.class);
 	private static final String ATTR_ON_INIT_RENDER_POSTED =
 		"org.zkoss.zul.Tree.onInitLaterPosted";
 
@@ -214,6 +217,7 @@ public class Tree extends MeshElement {
 	
 	private static final int INIT_LIMIT = -1; // since 7.0.0
 	private int _preloadsz = 50; // since 7.0.0
+	private transient LinkedList<Integer> _rodPagingIndex;  // since 7.0.0
 	
 	static {
 		addClientEvent(Tree.class, Events.ON_RENDER, CE_DUPLICATE_IGNORE|CE_IMPORTANT|CE_NON_DEFERRABLE);
@@ -298,7 +302,7 @@ public class Tree extends MeshElement {
 
 		// data[pageSize, beginPageIndex, visitedCount, visitedTotal, RenderedCount]
 		int[] data = new int[]{pgsz, ofs, 0, 0, 0};
-		getVisibleItemsDFS(getChildren(), map, data);
+		getVisibleItemsDFS((List<Component>) getChildren(), map, data);
 		return map;
 	}
 	/**
@@ -322,7 +326,7 @@ public class Tree extends MeshElement {
 							map.put(item, Boolean.TRUE);
 						}
 						if (item.isOpen()) {
-							if (!getVisibleItemsDFS(item.getChildren(), map, data)) {
+							if (!getVisibleItemsDFS((List<Component>) item.getChildren(), map, data)) {
 								return false;
 							} else {
 								// the children may be visible.
@@ -332,7 +336,7 @@ public class Tree extends MeshElement {
 					}
 				}
 			} else if (cmp instanceof Treechildren) {
-				if(!getVisibleItemsDFS(cmp.getChildren(), map, data)) return false;
+				if(!getVisibleItemsDFS((List<Component>) cmp.getChildren(), map, data)) return false;
 			}
 		}
 		return true;
@@ -454,13 +458,60 @@ public class Tree extends MeshElement {
 			return null; // skip to clone
 		}
 	}
+	
 	private class PGImpListener implements SerializableEventListener<PagingEvent>,
 			CloneableEventListener<PagingEvent> {
 		public void onEvent(PagingEvent event) {
 			if (inPagingMold()) {
 				if (WebApps.getFeature("ee") && getModel() != null) {
+					if (_rodPagingIndex == null)
+						_rodPagingIndex = new LinkedList<Integer>();
+					
 					int ap =  event.getActivePage();
 					int size = Tree.this.getPaginal().getPageSize();
+					int mps = maxRodPageSize();
+
+					
+					// if mps is less than 0, we don't store the index.
+					if (mps >= 0 && !_rodPagingIndex.contains(ap)) {
+						_rodPagingIndex.add(ap);
+					}	
+					
+					if (mps >= 1 && mps < _rodPagingIndex.size()) {
+						LinkedList<Integer> sortedIndex = new LinkedList<Integer>();
+						mps = _rodPagingIndex.size() - mps;
+						while (mps-- > 0) {
+							sortedIndex.add(_rodPagingIndex.removeFirst());
+						}
+						Collections.sort(sortedIndex);
+						
+						int i = 0;
+						int start = sortedIndex.removeFirst() * size;
+						int end = start + size;
+						
+						for (Treeitem ti : new ArrayList<Treeitem>(Tree.this.getItems())) {
+							if (i < start) {
+								i++;
+								continue;
+							}
+							if (i >= end) {
+								if (sortedIndex.isEmpty()) {
+									break;
+								} else {
+									start = sortedIndex.removeFirst() * size;
+									end = start + size;
+								}
+							}
+							
+							if (ti.isRendered()) {
+								ti.getChildren().clear();
+								ti.setRendered(false);
+							}
+								
+							i++;
+						}
+					}
+					
 					int start = ap * size;
 					int end = start + size;
 					int i = 0;
@@ -1421,7 +1472,7 @@ public class Tree extends MeshElement {
 
 		//B50-ZK-721
 		if (!(parent instanceof Treeitem) || ((Treeitem) parent).isLoaded()) {
-			List<Component> siblings = tc.getChildren();
+			List<Component> siblings = (List<Component>) tc.getChildren();
 			// if there is no sibling or new item is inserted at end.
 			tc.insertBefore(newTi,
 					// Note: we don't use index >= size(); reason: it detects bug
@@ -1436,7 +1487,7 @@ public class Tree extends MeshElement {
 	 */
 	private void onTreeDataRemoved(Component parent,Object node, int index){
 		final Treechildren tc = treechildrenOf(parent);
-		final List<Component> items = tc.getChildren();
+		final List<Component> items = (List<Component>) tc.getChildren();
 		if (items.size() > index) {
 			((Treeitem) items.get(index)).detach();
 		} else if (!(parent instanceof Treeitem) || ((Treeitem) parent).isLoaded()) {
@@ -1448,7 +1499,7 @@ public class Tree extends MeshElement {
 	 * Handle event that child's content is changed
 	 */
 	private void onTreeDataContentChange(Component parent,Object node, int index){
-		List<Component> items = treechildrenOf(parent).getChildren();
+		List<Component> items = (List<Component>) treechildrenOf(parent).getChildren();
 
 		/*
 		 * 2008/02/01 --- issue: [ 1884112 ] When Updating TreeModel, throws a IndexOutOfBoundsException
@@ -1502,7 +1553,7 @@ public class Tree extends MeshElement {
 	private static Treeitem getChildTreeitem(Treechildren tc, int i) {
 		if (tc == null)
 			return null;
-		List<Component> cs = tc.getChildren();
+		List<Component> cs = (List<Component>) tc.getChildren();
 		return i < 0 || i >= cs.size() ? null : (Treeitem) cs.get(i);
 	}
 	/*
@@ -1792,7 +1843,22 @@ public class Tree extends MeshElement {
 		return sz;
 	}
 
-	
+	/** 
+	 * Returns Specifies how many pages (of treeitems) to keep rendered in memory
+	 *  (on the server side) when navigating the tree using pagination.
+	 *  <p>
+	 * Default: 1. (Since 7.0.0)
+	 * <p>
+	 * It is used only if live data ({@link #setModel(ListModel)} and in paging mold
+	 * ({@link #getPagingChild}.
+	 */
+	private int maxRodPageSize() {
+		if (WebApps.getFeature("ee")) {
+			 return Utils.getIntAttribute(this, "org.zkoss.zul.tree.maxRodPageSize",
+						INIT_LIMIT, true);
+		}
+		return -1;
+	}
 	/** 
 	 * Returns the number of items rendered when the Tree first render.
 	 *  <p>
@@ -1936,7 +2002,7 @@ public class Tree extends MeshElement {
 				try {
 					item.setLabel(Exceptions.getMessage(ex));
 				} catch (Throwable t) {
-					log.error(t);
+					log.error("", t);
 				}
 				throw ex;
 			}
@@ -1962,7 +2028,7 @@ public class Tree extends MeshElement {
 				try {
 					item.setLabel(Exceptions.getMessage(ex));
 				} catch (Throwable t) {
-					log.error(t);
+					log.error("", t);
 				}
 				throw ex;
 			}
@@ -2183,7 +2249,7 @@ public class Tree extends MeshElement {
 			return null;
 		// Start from root-Tree
 		Treeitem ti = null;
-		List<Component> children = this.getTreechildren().getChildren();
+		List<Component> children = (List<Component>) this.getTreechildren().getChildren();
 		/*
 		 * Go through each stop in path and render corresponding treeitem
 		 */
@@ -2196,7 +2262,7 @@ public class Tree extends MeshElement {
 				ti.setOpen(true);
 
 			if (ti.getTreechildren() != null) {
-				children = ti.getTreechildren().getChildren();
+				children = (List<Component>) ti.getTreechildren().getChildren();
 			} else {
 				if (i != path.length - 1) {
 					return null;
@@ -2453,7 +2519,7 @@ public class Tree extends MeshElement {
 	/** An iterator used by _heads.
 	 */
 	private class Iter implements Iterator<Component> {
-		private final ListIterator<Component> _it = getChildren().listIterator();
+		private final ListIterator<Component> _it = (ListIterator<Component>) getChildren().listIterator();
 
 		public boolean hasNext() {
 			while (_it.hasNext()) {

@@ -613,7 +613,7 @@ String scroll; //DOM Element's ID</code></pre>
 
 		this.offset = ofs;
 		_activate(this, devt, pt);
-
+		
 		if ((!zk.ie || zk.ie9 || zk.ie8_) && !zk.mobile) {
 			if (!zk.Draggable.ignoreStop(target)) // Bug B65-ZK-1839 we should ignore select tag on IE9
 				devt.stop();
@@ -813,7 +813,8 @@ String scroll; //DOM Element's ID</code></pre>
 		//Bug 3310017/3309975: if trigger focus() FF and chrome cannot handle input cursor.
 		return zk(target).isInput()
 			// B65-ZK-1839 ignore select tag for IE9, chrome, opera
-			|| ((zk.ie9 || zk.chrome || zk.opera) && jq.nodeName(target, 'select'));
+			|| ((zk.ie9 || zk.chrome || zk.opera) && jq.nodeName(target, 'select'))
+				|| jq.nodeName(target, 'option'); // B65-ZK-1946: ignore option tag 
 	}
 });
 })();
