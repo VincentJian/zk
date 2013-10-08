@@ -1113,7 +1113,7 @@ var i,
 		"ID": new RegExp( "^#(" + characterEncoding + ")" ),
 		"CLASS": new RegExp( "^\\.(" + characterEncoding + ")" ),
 		/* Jumper Chen, Potix, 20100318*/
-		"ZID": /\$((?:[\w\u00c0-\uFFFF-]|\\.)+)/,
+		"ZID": /^\$((?:[\w\u00c0-\uFFFF-]|\\.)+)/,
 		"TAG": new RegExp( "^(" + characterEncoding.replace( "w", "w*" ) + ")" ),
 		/* Jumper Chen, Potix, 20100325*/
 		"ZTAG": /^((?:[@\w\u00c0-\uFFFF\*-]|\\.)+)/,
@@ -2132,7 +2132,7 @@ Expr = Sizzle.selectors = {
 
 		/* Jumper Chen, Potix, 20100318*/
 		"ZID": function(selector) {
-			var id = selector.substring(1);
+			var id = selector.startsWith('$') ? selector.substring(1) : selector;
 			return function ( elem ) {
 				var wgt = zk.Widget.$(elem);
 				return wgt ? wgt.id === id : false;
