@@ -18,7 +18,6 @@ it will be useful, but WITHOUT ANY WARRANTY.
  * <p>Default {@link #getZclass}: z-spinner.
  */
 zul.inp.Spinner = zk.$extends(zul.inp.NumberInputWidget, {
-	_value: 0,
 	_step: 1,
 	_buttonVisible: true,
 	$define: {
@@ -228,8 +227,12 @@ zul.inp.Spinner = zk.$extends(zul.inp.NumberInputWidget, {
 	},
 	_increase: function (is_add){
 		var inp = this.getInputNode(),
-			value = parseInt(inp.value, 10),
-			result = is_add ? (value + this._step) : (value - this._step);
+			value = this.coerceFromString_(inp.value); //ZK-1851 convert input value using pattern
+
+		if (value && value.error)
+			return; //nothing to do if error happens
+		
+		var	result = is_add ? (value + this._step) : (value - this._step);
 		
 		// control overflow
 		if (result > Math.pow(2,31)-1)
@@ -241,7 +244,7 @@ zul.inp.Spinner = zk.$extends(zul.inp.NumberInputWidget, {
 		if (this._max!=null && result > this._max) result = value;
 		else if (this._min!=null && result < this._min) result = value;
 
-		inp.value = result;
+		inp.value = this.coerceToString_(result); //ZK-1851 convert result using pattern
 		
 		this._onChanging();
 		
@@ -283,6 +286,9 @@ zul.inp.Spinner = zk.$extends(zul.inp.NumberInputWidget, {
 		}
 	},
 	doBlur_: function (evt) {
+		var btn = this.$n('btn');
+		if (zk.ie <= 8 && btn && !this._instant && jq(btn).hasClass(this.getZclass()+'-btn-over'))
+			return; //Bug ZK-460: IE 6-8 only. If still focus on spinner, should not fire onChange.  
 		var n = this.$n();
 		if (this._inplace && this._inplaceout)
 			n.style.width = jq.px0(zk(n).revisedWidth(n.offsetWidth));

@@ -86,6 +86,10 @@ zul.inp.Combobox = zk.$extends(zul.inp.ComboWidget, {
 			zk(this.getPopupNode_()).redoCSS(-1);
 			this._shallRedoCss = null;
 		}
+		// B65-ZK-1990: Fix position of popup when it appears above the input, aligned to the left
+		if (this.isOpen() && this._shallSyncPopupPosition) {
+			zk(this.getPopupNode_()).position(this.getInputNode(), 'before_start');
+		}
 	},
 	setValue: function (val) {
 		this.$supers('setValue', arguments);
@@ -259,7 +263,7 @@ zul.inp.Combobox = zk.$extends(zul.inp.ComboWidget, {
 		function getVisibleItemOnly(item, bUp, including) {
 			var next = bUp ? 'previousSibling' : 'nextSibling';
 			for (var n = including ? item : item[next]; n; n = n[next])
-				if (!n.isDisabled())
+				if (!n.isDisabled() && n.isVisible()) // ZK-1728: check if the item is visible
 					return n;
 			return null;
 		}

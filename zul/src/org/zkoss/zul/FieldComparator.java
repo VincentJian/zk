@@ -113,7 +113,7 @@ public class FieldComparator implements Comparator, Serializable {
 		}
 		return _orderBy;
 	}
-	/** Returns the original order-by claused passed to the constructor.
+	/** Returns the original order-by clause passed to the constructor.
 	 * It is usually the field's name, such as <code>category</code>,
 	 * or a concatenation of field names, such as <code>category.name</code>.
 	 * <p>Notice that, with the field's name, you could retrieve the value
@@ -169,7 +169,7 @@ public class FieldComparator implements Comparator, Serializable {
 					((Character)c).charValue()));
 		} else if ("LOWER".equals(func)) {
 			if (c instanceof String)
-				return ((String)c).toLowerCase();
+				return ((String)c).toLowerCase(java.util.Locale.ENGLISH);
 			if (c instanceof Character)
 				return new Character(Character.toLowerCase(
 					((Character)c).charValue()));

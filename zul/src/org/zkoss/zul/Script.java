@@ -176,7 +176,7 @@ public class Script extends AbstractComponent {
 	 * <p>Default: null.
 	 *
 	 * <p>Deriving class can override this method to return whatever
-	 * it prefers (ingored if null).
+	 * it prefers (ignored if null).
 	 * @since 3.0.0
 	 */
 	public String getContent() {
@@ -235,7 +235,9 @@ public class Script extends AbstractComponent {
 				renderer.renderDirectly("content", "function(){\n" + cnt + "\n}");
 			else {
 				Writer out = ComponentRedraws.getScriptBuffer();
-				out.write(cnt);
+
+				// B65-ZK-1836
+				out.write(cnt.replaceAll("</(?i)(?=script>)", "<\\\\/"));
 				out.write('\n');
 			}
 

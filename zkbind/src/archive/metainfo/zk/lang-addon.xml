@@ -36,8 +36,8 @@ Copyright (C) 2011 Potix Corporation. All Rights Reserved.
 
 	<version>
 		<version-class>org.zkoss.bind.Version</version-class>
-		<version-uid>6.5.1</version-uid>
-		<zk-version>6.5.1</zk-version><!-- or later -->
+		<version-uid>6.5.5</version-uid>
+		<zk-version>6.5.5</zk-version><!-- or later -->
 	</version>
 
 	<zscript language="Java">
@@ -219,10 +219,6 @@ Copyright (C) 2011 Potix Corporation. All Rights Reserved.
 				<attribute-value>onChange</attribute-value>
 			</attribute>
 			<attribute>
-				<attribute-name>LOAD_EVENT</attribute-name>
-				<attribute-value>onAfterRender</attribute-value>
-			</attribute>
-			<attribute>
 				<attribute-name>ACCESS</attribute-name>
 				<attribute-value>both</attribute-value>
 			</attribute>
@@ -257,10 +253,6 @@ Copyright (C) 2011 Potix Corporation. All Rights Reserved.
 			<attribute>
 				<attribute-name>SAVE_EVENT</attribute-name>
 				<attribute-value>onSelect</attribute-value>
-			</attribute>
-			<attribute>
-				<attribute-name>LOAD_EVENT</attribute-name>
-				<attribute-value>onAfterRender</attribute-value>
 			</attribute>
 			<attribute>
 				<attribute-name>ACCESS</attribute-name>
@@ -509,7 +501,19 @@ Copyright (C) 2011 Potix Corporation. All Rights Reserved.
 				<attribute-name>CONVERTER</attribute-name>
 				<attribute-value>org.zkoss.bind.converter.sys.GridModelConverter</attribute-value>
 			</attribute>
-		</annotation>		
+		</annotation>	
+		<annotation>
+			<annotation-name>ZKBIND</annotation-name>
+			<property-name>ZKBIND$activePage</property-name>
+			<attribute>
+				<attribute-name>ACCESS</attribute-name>
+				<attribute-value>both</attribute-value>
+			</attribute>
+			<attribute>
+				<attribute-name>SAVE_EVENT</attribute-name>
+				<attribute-value>onPaging</attribute-value>
+			</attribute>
+		</annotation>	
 	</component>
 	<component>
 		<component-name>groupbox</component-name>
@@ -677,6 +681,18 @@ Copyright (C) 2011 Potix Corporation. All Rights Reserved.
 				<attribute-value>org.zkoss.bind.converter.sys.ListboxSelectedIndexConverter</attribute-value>
 			</attribute>
 		</annotation>
+		<annotation>
+			<annotation-name>ZKBIND</annotation-name>
+			<property-name>ZKBIND$activePage</property-name>
+			<attribute>
+				<attribute-name>ACCESS</attribute-name>
+				<attribute-value>both</attribute-value>
+			</attribute>
+			<attribute>
+				<attribute-name>SAVE_EVENT</attribute-name>
+				<attribute-value>onPaging</attribute-value>
+			</attribute>
+		</annotation>
 	</component>
 	<!--component>
 		<component-name>listcell</component-name>
@@ -792,7 +808,11 @@ Copyright (C) 2011 Potix Corporation. All Rights Reserved.
 		<extends>paging</extends>
 		<annotation>
 			<annotation-name>ZKBIND</annotation-name>
-			<property-name>activePage</property-name>
+			<!--ZK-1908 Databinding Load order causing problems on Paging component.
+			System annotation shouldn't effect the annotation sequence.
+			after 6.5.4, add a ZKBIND prefix so it won't effect original property 
+			-->
+			<property-name>ZKBIND$activePage</property-name>
 			<attribute>
 				<attribute-name>ACCESS</attribute-name>
 				<attribute-value>both</attribute-value>
@@ -1290,10 +1310,22 @@ Copyright (C) 2011 Potix Corporation. All Rights Reserved.
 		<component-name>toolbar</component-name>
 		<extends>toolbar</extends>
 	</component-->
-	<!--component>
+	<component>
 		<component-name>toolbarbutton</component-name>
 		<extends>toolbarbutton</extends>
-	</component-->
+		<annotation>
+			<annotation-name>ZKBIND</annotation-name>
+			<property-name>checked</property-name>
+			<attribute>
+				<attribute-name>ACCESS</attribute-name>
+				<attribute-value>both</attribute-value>
+			</attribute>
+			<attribute>
+				<attribute-name>SAVE_EVENT</attribute-name>
+				<attribute-value>onCheck</attribute-value>
+			</attribute>
+		</annotation>
+	</component>
 	<component>
 		<component-name>tree</component-name>
 		<extends>tree</extends>

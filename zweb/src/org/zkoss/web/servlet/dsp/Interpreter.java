@@ -56,7 +56,7 @@ public class Interpreter {
 		int k = path.indexOf(';', j + 1); //it might contain session-id
 		String ext =
 			(k >= 0 ? path.substring(j + 1, k): path.substring(j + 1))
-			.toLowerCase();
+			.toLowerCase(java.util.Locale.ENGLISH);
 		if ("dsp".equals(ext)) {
 			if (j == 0) return null; //unknown
 			k = path.lastIndexOf('.', j - 1);
@@ -73,7 +73,7 @@ public class Interpreter {
 
 	/** Parses a content to a meta format called {@link Interpretation}.
 	 *
-	 * @param xelc the context formation for evaluating ZUL exxpressions.
+	 * @param xelc the context formation for evaluating ZUL expressions.
 	 * It can be null, in which case no additional functions
 	 * and variable resolvers are initialized at the beginning.
 	 * @param ctype the content type. Optional. It is used only if

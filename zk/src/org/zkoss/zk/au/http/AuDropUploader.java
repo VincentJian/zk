@@ -60,7 +60,7 @@ import org.zkoss.zk.ui.util.CharsetFinder;
 import org.zkoss.zk.ui.util.Configuration;
 
 /**
- * The AU extension to upload files withd HTML5 feature.
+ * The AU extension to upload files with HTML5 feature.
  * It is based on Apache Commons File Upload.
  * @since 6.5.0
  */
@@ -68,17 +68,14 @@ public class AuDropUploader implements AuExtension {
 	private static final Log log = Log.lookup(AuDropUploader.class);
 
 	public AuDropUploader() {}
-	
-	@Override
+		
 	public void init(DHtmlUpdateServlet servlet) {
 	}
-	
-	@Override
+		
 	public void destroy() {}
 
 	/** Processes a file uploaded from the client.
 	 */
-	@Override
 	public void service(
 	HttpServletRequest request, HttpServletResponse response, String pathInfo)
 	throws ServletException, IOException {		
@@ -214,7 +211,7 @@ public class AuDropUploader implements AuExtension {
 		}
 
 		String ctype = fi.getContentType(),
-			ctypelc = ctype != null ? ctype.toLowerCase(): null;
+			ctypelc = ctype != null ? ctype.toLowerCase(java.util.Locale.ENGLISH): null;
 		if (name != null && "application/octet-stream".equals(ctypelc)) { //Bug 1896291: IE limit
 			final int j = name.lastIndexOf('.');
 			if (j >= 0) {
@@ -264,7 +261,7 @@ public class AuDropUploader implements AuExtension {
 			new StreamMedia(name, null, ctype, fi);
 	}
 	private static String getCharset(String ctype) {
-		final String ctypelc = ctype.toLowerCase();
+		final String ctypelc = ctype.toLowerCase(java.util.Locale.ENGLISH);
 		for (int j = 0; (j = ctypelc.indexOf("charset", j)) >= 0; j += 7) {
 			int k = Strings.skipWhitespacesBackward(ctype, j - 1);
 			if (k < 0 || ctype.charAt(k) == ';') {
@@ -348,7 +345,7 @@ public class AuDropUploader implements AuExtension {
 	/** Returns whether the request contains multipart content.
 	 */
 	public static final boolean isMultipartContent(HttpServletRequest request) {
-		return "post".equals(request.getMethod().toLowerCase())
+		return "post".equals(request.getMethod().toLowerCase(java.util.Locale.ENGLISH))
 			&& FileUploadBase.isMultipartContent(new ServletRequestContext(request));
 	}
 

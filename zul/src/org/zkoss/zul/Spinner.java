@@ -28,10 +28,10 @@ import org.zkoss.zul.mesg.MZul;
  * <p>Default {@link #getZclass}: z-spinner.
  *
  * <p>spinner supports below key events.
- * <lu>
+ * <ul>
  *  <li>0-9 : set the value on the inner text box.
  * 	<li>delete : clear the value to empty (null)
- * </lu>
+ * </ul>
  * @author gracelin
  * @since 3.5.0
  */
@@ -55,7 +55,8 @@ public class Spinner extends NumberInputElement {
 	public Integer getValue() throws WrongValueException {
 		return (Integer)getTargetValue();
 	}
-	/** Returns the value in int. If null, zero is returned.
+	/** Returns the value in integer. If null, zero is returned.
+	 * @exception WrongValueException if user entered a wrong value
 	 */
 	public int intValue() throws WrongValueException {
 		final Object val = getTargetValue();
@@ -63,6 +64,10 @@ public class Spinner extends NumberInputElement {
 	}
 	protected Object getTargetValue() throws WrongValueException {
 		Object val = super.getTargetValue();
+		
+		// ZK-1949, we need to accept the null value when invoking getValue()
+		if (val == null)
+			return null;
 		if (val instanceof Integer) {
 			return val;
 		}

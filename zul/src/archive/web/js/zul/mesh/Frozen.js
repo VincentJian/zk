@@ -128,6 +128,7 @@ zul.mesh.Frozen = zk.$extends(zul.Widget, {
 	onSize: function () {
 		if (!this._columns) return;
 		var self = this;
+		self._syncFrozen(); // B65-ZK-1470
 		// Bug 3218078, to do the sizing after the 'setAttr' command
 		setTimeout(function () {
 			_onSizeLater(self);
@@ -274,7 +275,11 @@ zul.mesh.Frozen = zk.$extends(zul.Widget, {
 							var tBodies = eFootTbl.tBodies;
 							
 							if (tBodies) {
-								tBodies[tBodies.length - 1].rows[0].cells[index].style.width = cellWidth;
+								var row = tBodies[tBodies.length - 1].rows[0];
+								
+								// Bug ZK-1914, ignore if footer contains spans or cells size not matched.
+								if (row.cells.length > index)
+									row.cells[index].style.width = cellWidth;
 							}
 						}
 					}
@@ -324,8 +329,8 @@ zul.mesh.Frozen = zk.$extends(zul.Widget, {
 
 		mesh._restoreFocus();
 		
-		// Bug ZK-601
-		if (zk.ie == 8)
+		// Bug ZK-601, Bug ZK-1572
+		if (zk.ie == 8 || zk.ie == 9)
 			zk(mesh).redoCSS();
 	}
 });

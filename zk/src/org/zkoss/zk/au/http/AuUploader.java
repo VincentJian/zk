@@ -104,17 +104,17 @@ public class AuUploader implements AuExtension {
 					uuid = request.getParameter("wid");
 					sid = request.getParameter("sid");
 					desktop = ((WebAppCtrl)sess.getWebApp()).getDesktopCache(sess).getDesktop(request.getParameter("dtid"));
-					Map<String, Integer> precent = cast((Map) desktop.getAttribute(Attributes.UPLOAD_PERCENT));
-					Map<String, Object> size = cast((Map)desktop.getAttribute(Attributes.UPLOAD_SIZE));
+					Map<String, Integer> percent = cast((Map) desktop.getAttribute(Attributes.UPLOAD_PERCENT));
+					Map<String, Object> size = cast((Map) desktop.getAttribute(Attributes.UPLOAD_SIZE));
 					final String key = uuid + '_' + sid;
 					Object sinfo = size.get(key);
 					if (sinfo instanceof String) {
 						response.getWriter().write("error:" + sinfo);
 						size.remove(key);
-						precent.remove(key);
+						percent.remove(key);
 						return;
 					}
-					final Integer p = precent.get(key);
+					final Integer p = percent.get(key);
 					final Long cb = (Long)sinfo;
 					response.getWriter().write((p != null ? p.intValue(): -1)+ ","
 								+(cb != null ? cb.longValue(): -1));
@@ -163,28 +163,29 @@ public class AuUploader implements AuExtension {
 			}
 
 			if (desktop != null) {
-				Map<String, Integer> precent = cast((Map) desktop.getAttribute(Attributes.UPLOAD_PERCENT));
+				Map<String, Integer> percent = cast((Map) desktop.getAttribute(Attributes.UPLOAD_PERCENT));
 				Map<String, Object> size = cast((Map) desktop.getAttribute(Attributes.UPLOAD_SIZE));
 				final String key = uuid + '_' + sid;
-				if (precent != null) {
-					precent.remove(key);
+				if (percent != null) {
+					percent.remove(key);
 					size.remove(key);
 				}
 			}
 		}
 		if (attrs.get("contentId") == null && alert == null)
-			alert = "contentId is required!";
+			//B65-ZK-1724: display more meaningful errormessage
+			alert = "Upload Aborted : (contentId is required)";
 			
 		if (alert != null) {
 			if (desktop == null) {
 				response.setIntHeader("ZK-Error", HttpServletResponse.SC_GONE);
 				return;
 			}
-			Map<String, Integer> precent = cast((Map) desktop.getAttribute(Attributes.UPLOAD_PERCENT));
+			Map<String, Integer> percent = cast((Map) desktop.getAttribute(Attributes.UPLOAD_PERCENT));
 			Map<String, Object> size = cast((Map)desktop.getAttribute(Attributes.UPLOAD_SIZE));
 			final String key = uuid + '_' + sid;
-			if (precent != null) {
-				precent.remove(key); 
+			if (percent != null) {
+				percent.remove(key);
 				size.put(key, alert);
 			}
 		}
@@ -265,7 +266,7 @@ public class AuUploader implements AuExtension {
 		}
 
 		String ctype = fi.getContentType(),
-			ctypelc = ctype != null ? ctype.toLowerCase(): null;
+			ctypelc = ctype != null ? ctype.toLowerCase(java.util.Locale.ENGLISH): null;
 		if (name != null && "application/octet-stream".equals(ctypelc)) { //Bug 1896291: IE limit
 			final int j = name.lastIndexOf('.');
 			if (j >= 0) {
@@ -315,7 +316,7 @@ public class AuUploader implements AuExtension {
 			new StreamMedia(name, null, ctype, fi);
 	}
 	private static String getCharset(String ctype) {
-		final String ctypelc = ctype.toLowerCase();
+		final String ctypelc = ctype.toLowerCase(java.util.Locale.ENGLISH);
 		for (int j = 0; (j = ctypelc.indexOf("charset", j)) >= 0; j += 7) {
 			int k = Strings.skipWhitespacesBackward(ctype, j - 1);
 			if (k < 0 || ctype.charAt(k) == ';') {
@@ -400,7 +401,7 @@ public class AuUploader implements AuExtension {
 	/** Returns whether the request contains multipart content.
 	 */
 	public static final boolean isMultipartContent(HttpServletRequest request) {
-		return "post".equals(request.getMethod().toLowerCase())
+		return "post".equals(request.getMethod().toLowerCase(java.util.Locale.ENGLISH))
 			&& FileUploadBase.isMultipartContent(new ServletRequestContext(request));
 	}
 

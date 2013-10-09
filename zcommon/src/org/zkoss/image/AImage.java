@@ -70,7 +70,7 @@ public class AImage implements Image, java.io.Serializable {
 	public AImage(String name, byte[] data) throws IOException {
 		init(name, data);
 	}
-	/** Contructs an image with an input stream.
+	/** Constructs an image with an input stream.
 	 *
 	 * <p>Note that this method automatically closes the input stream
 	 * (since ZK 3.0.0).
@@ -111,7 +111,7 @@ public class AImage implements Image, java.io.Serializable {
 			final Iterator it = ImageIO.getImageReaders(imis);
 			if (it.hasNext()) {
 				final ImageReader rd = (ImageReader)it.next();
-				format = rd.getFormatName().toLowerCase();
+				format = rd.getFormatName().toLowerCase(java.util.Locale.ENGLISH);
 			}
 		} catch (IOException ex) {
 			//not possible, but eat it and recover it later

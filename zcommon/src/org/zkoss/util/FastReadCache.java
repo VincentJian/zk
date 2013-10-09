@@ -16,8 +16,8 @@ import java.util.ArrayList;
 import org.zkoss.lang.Objects;
 
 /**
- * A {@link CacheMap} that the possiblity to have cache hit is much more than
- * not. It maintains a reaonly cache (so no need to synchronize), and then
+ * A {@link CacheMap} that the possibility to have cache hit is much more than
+ * not. It maintains a readonly cache (so no need to synchronize), and then
  * clone and replace it if there is a miss.
  * Thus, as time goes, most access can go directly to the readonly cache
  * without any synchronization or cloning.
@@ -29,6 +29,7 @@ public class FastReadCache<K, V> implements Cache<K, V>, java.io.Serializable, C
 	private InnerCache _cache;
 	private Map<K, V> _writeCache;
 	private transient short _missCnt;
+	private transient short _maxMissCnt = 100;
 	/** whether _writeCache is different from _cache. */
 	private boolean _moreInWriteCache;
 
@@ -43,7 +44,16 @@ public class FastReadCache<K, V> implements Cache<K, V>, java.io.Serializable, C
 		_cache = new InnerCache(maxSize, lifetime);
 	}
 
-	@Override
+	/** Constructor.
+	 * @param maxMissCount a short value from 0 to this for sync the read cache,
+	 * default is 100.  
+	 * @since 6.5.2
+	 */
+	public FastReadCache(int maxSize, int lifetime, short maxMissCount) {
+		_cache = new InnerCache(maxSize, lifetime);
+		_maxMissCnt = maxMissCount;
+	}
+		
 	public boolean containsKey(Object key) {
 		boolean found = _cache.containsKey(key);
 		if (!found && _moreInWriteCache)
@@ -53,7 +63,7 @@ public class FastReadCache<K, V> implements Cache<K, V>, java.io.Serializable, C
 			}
 		return found;
 	}
-	@Override
+	
 	public V get(Object key) {
 		V val = _cache.get(key);
 		if (val == null && _moreInWriteCache)
@@ -63,7 +73,7 @@ public class FastReadCache<K, V> implements Cache<K, V>, java.io.Serializable, C
 			}
 		return val;
 	}
-	@Override
+	
 	public V put(K key, V value) {
 		V result = value;
 		synchronized (this) {
@@ -77,7 +87,7 @@ public class FastReadCache<K, V> implements Cache<K, V>, java.io.Serializable, C
 		}
 		return result;
 	}
-	@Override
+	
 	public V remove(Object key) {
 		V result = null;
 		synchronized (this) {
@@ -90,7 +100,7 @@ public class FastReadCache<K, V> implements Cache<K, V>, java.io.Serializable, C
 		}
 		return result;
 	}
-	@Override
+	
 	public void clear() {
 		synchronized (this) {
 			setReadAndClearWrite(new InnerCache(getMaxSize(), getLifetime()));
@@ -104,7 +114,7 @@ public class FastReadCache<K, V> implements Cache<K, V>, java.io.Serializable, C
 		//Note: we don't count it a miss if both _writeCache and _cache don't have
 		//because it implies the same thread (i.e., only  a few thread,
 		//so synchronized(this) overhead is small)
-		if (++_missCnt == 100)
+		if (++_missCnt == _maxMissCnt)
 			syncToReadCache();
 	}
 	/** Synchronizes _writeCache to _cache.
@@ -140,20 +150,19 @@ public class FastReadCache<K, V> implements Cache<K, V>, java.io.Serializable, C
 		_moreInWriteCache = false;
 		_cache = cache;
 	}
-
-	@Override
+	
 	public int getLifetime() {
 		return _cache.getLifetime();
 	}
-	@Override
+	
 	public void setLifetime(int lifetime) {
 		_cache.setLifetime(lifetime);
 	}
-	@Override
+	
 	public int getMaxSize() {
 		return _cache.getMaxSize();
 	}
-	@Override
+	
 	public void setMaxSize(int maxsize) {
 		_cache.setMaxSize(maxsize);
 	}
@@ -169,12 +178,12 @@ public class FastReadCache<K, V> implements Cache<K, V>, java.io.Serializable, C
 			super(maxSize, lifetime, false);
 			//insertion-order since _cache be read concurrently
 		}
-		@Override /*package*/
+		 /*package*/
 		void removeInExpunge(Iterator<Map.Entry<K, Value<V>>> it, K key) {
 			_removed.add(key);
 				//don't remove it here since _cache (this) is readonly
 		}
-		@Override /*package*/
+		 /*package*/
 		void doExpunge() {
 			synchronized (FastReadCache.this) {
 				_removed = new ArrayList<K>();
@@ -192,7 +201,7 @@ public class FastReadCache<K, V> implements Cache<K, V>, java.io.Serializable, C
 				}
 			}
 		}
-		@Override
+		
 		public Object clone() {
 			final InnerCache clone = (InnerCache)super.clone();
 			clone._removed = null;

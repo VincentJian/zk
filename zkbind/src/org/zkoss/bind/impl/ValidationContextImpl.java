@@ -26,6 +26,9 @@ import org.zkoss.bind.ValidationContext;
 public class ValidationContextImpl implements ValidationContext{
 
 	private boolean _valid = true;//default validation result is true
+	
+	//ZK-1819 ValidationContext support a new flag that can identify the value of single field whether is valid when use form binding
+	private boolean _localValid = true;
 	private String _command;
 	private Property _property; //main property
 	private Map<String,Property[]> _properties; //related properties
@@ -41,27 +44,27 @@ public class ValidationContextImpl implements ValidationContext{
 		this._valid = valid;
 	}
 
-	@Override
+	
 	public BindContext getBindContext() {
 		return _ctx;
 	}
 
-	@Override
+	
 	public String getCommand() {
 		return _command;
 	}
 
-	@Override
+	
 	public Map<String,Property[]> getProperties() {
 		return _properties;
 	}
 	
-	@Override
+	
 	public Property[] getProperties(String name) {
 		return _properties.get(name);
 	}
 	
-	@Override
+	
 	@SuppressWarnings("unchecked")
 	public Map<String,Property> getProperties(Object base){
 		if(base==null) throw new IllegalArgumentException("base object is null");
@@ -85,24 +88,27 @@ public class ValidationContextImpl implements ValidationContext{
 		return mp;
 	}
 	
-	@Override
+	
 	public Object getValidatorArg(String key) {
 		return _ctx.getValidatorArg(key);
 	}
 	
-	@Override
+	
 	public Property getProperty() {
 		return _property;
 	}
 
-	@Override
+	
 	public boolean isValid() {
 		return _valid;
 	}
 
-	@Override
+	public boolean isLocalValid(){
+		return _localValid;
+	}
+	
 	public void setInvalid(){
-		this._valid = false;
+		this._valid = this._localValid = false;
 	}
 
 }

@@ -74,7 +74,7 @@ import org.zkoss.zul.impl.XulElement;
  * <p>Events: onAfterRender<br/>
  * onAfterRender is sent when the model's data has been rendered.(since 5.0.4)
  * 
- * <p>Besides creating {@link Row} programmingly, you can assign
+ * <p>Besides creating {@link Row} programmatically, you can assign
  * a data model (a {@link ListModel} or {@link GroupsModel} instance) to a grid via
  * {@link #setModel(ListModel)} or {@link #setModel(GroupsModel)}
  * and then the grid will retrieve data
@@ -328,6 +328,10 @@ public class Grid extends MeshElement {
 						initModel();
 					} else {
 						resetDataLoader();  //enforce recreate dataloader
+						
+						// Bug ZK-1895
+						//The attribute shall be removed, otherwise DataLoader will not syncModel when setModel
+						Executions.getCurrent().removeAttribute("zkoss.Grid.deferInitModel_"+getUuid());
 					}
 				}
 			} else if (_model != null){ //rows not created yet
@@ -349,7 +353,7 @@ public class Grid extends MeshElement {
 			setModel(_model);
 		}
 
-		@Override
+		
 		public Object willClone(Component comp) {
 			return null; // skip to clone
 		}
@@ -522,7 +526,7 @@ public class Grid extends MeshElement {
 				new PagingEvent(event.getName(), Grid.this,
 					event.getPageable(), event.getActivePage()));
 		}
-		@Override
+		
 		public Object willClone(Component comp) {
 			return null; // skip to clone
 		}
@@ -551,7 +555,7 @@ public class Grid extends MeshElement {
 			}
 		}
 
-		@Override
+		
 		public Object willClone(Component comp) {
 			return null; // skip to clone
 		}
@@ -632,7 +636,7 @@ public class Grid extends MeshElement {
 	 * If a non-null model is assigned, no matter whether it is the same as
 	 * the previous, it will always cause re-render.
 	 *
-	 * @param model the list model to associate, or null to dis-associate
+	 * @param model the list model to associate, or null to dissociate
 	 * any previous model.
 	 * @exception UiException if failed to initialize with the model
 	 * @see #getListModel
@@ -643,13 +647,13 @@ public class Grid extends MeshElement {
 			if (_model != model) {
 				if (_model != null) {
 					_model.removeListDataListener(_dataListener);
+					/* Bug ZK-1512: should clear row anyway
 					if (_model instanceof GroupsListModel)
-						_rows.getChildren().clear();
+						_rows.getChildren().clear();*/
 					
 					resetDataLoader(); // Bug 3357641
-				} else {
-					if (_rows != null) _rows.getChildren().clear(); //Bug 1807414
 				}
+				if (_rows != null) _rows.getChildren().clear(); //Bug 1807414, ZK-1512
 				
 				smartUpdate("model", model instanceof GroupsListModel || model instanceof GroupsModel ? "group" : true);
 
@@ -676,7 +680,7 @@ public class Grid extends MeshElement {
 			//such that we won't render the same set of data twice
 			//--
 			//For better performance, we shall load the first few row now
-			//(to save a roundtrip)
+			//(to save a round trip)
 		} else if (_model != null) {
 			_model.removeListDataListener(_dataListener);
 			_model = null;
@@ -693,7 +697,7 @@ public class Grid extends MeshElement {
 	 * <p>The groups model is used to represent a list of data with
 	 * grouping.
 	 *
-	 * @param model the groups model to associate, or null to dis-associate
+	 * @param model the groups model to associate, or null to dissociate
 	 * any previous model.
 	 * @exception UiException if failed to initialize with the model
 	 * @since 3.5.0
@@ -707,7 +711,9 @@ public class Grid extends MeshElement {
 		if (_dataListener == null)
 			_dataListener = new ListDataListener() {
 				public void onChange(ListDataEvent event) {
-					onListDataChange(event);
+					// ZK-1864: share listmodelist cause un-predictable reload
+					if (event.getType() != ListDataEvent.SELECTION_CHANGED)
+						onListDataChange(event);
 				}
 			};
 			
@@ -889,6 +895,7 @@ public class Grid extends MeshElement {
 			}
 
 			int j = 0;
+			int index = 0; // ZK-1867: Set visible of row doesn't work correctly
 			int realOfs = ofs - getDataLoader().getOffset();
 			if (realOfs < 0) realOfs = 0;
 			boolean open = true;
@@ -898,11 +905,14 @@ public class Grid extends MeshElement {
 
 				if (row.isVisible()
 				&& (open || row instanceof Groupfoot || row instanceof Group)) {
-					renderer.render(row, j + ofs); 
+					renderer.render(row, index + ofs); 
 					++j;
 				}
 				if (row instanceof Group)
 					open = ((Group) row).isOpen();
+
+				// B65-ZK-1867 and Z60-Grid-GroupsModelArray-Paging-noROD.zul
+				index++;
 			}
 
 		} catch (Throwable ex) {
@@ -946,7 +956,7 @@ public class Grid extends MeshElement {
 			// when the event is fired from it, i.e. No need to sync the sorting
 			// status here.
 			if (event.getType() == ListDataEvent.STRUCTURE_CHANGED
-					&& _model instanceof Sortable) {
+					&& _model instanceof Sortable && _cols != null) { //ZK-1704 added null check for _cols
 				Sortable<Object> smodel = cast(_model);
 				List<Column> cols = cast(_cols.getChildren());
 				boolean found = false;
@@ -1103,7 +1113,7 @@ public class Grid extends MeshElement {
 	}
 
 	public void renderItems(Set<? extends Row> rows) {
-		if (_model == null) { //just in case that app dev might change it
+		if (_model == null) { //just in case that application developers might change it
 			if (log.debugable()) log.debug("No model no render");
 			return;
 		}

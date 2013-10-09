@@ -23,7 +23,7 @@ it will be useful, but WITHOUT ANY WARRANTY.
 			ps = $prev[0].style;
 			// ZK-700
 			// ignore prev if not displayed
-			if (ps.display == 'none')
+			if (jq($prev[0]).css('display') == 'none') // B65-ZK-1925, B65-ZK-1932: Use jQuery's .css() function to determine the property
 				ignorePrev = true;
 			else {
 				zs = $zkc[0].style;
@@ -68,7 +68,7 @@ it will be useful, but WITHOUT ANY WARRANTY.
 			ps = $prev[0].style;
 			// ZK-700
 			// ignore prev if not displayed
-			if (ps.display == 'none')
+			if (jq($prev[0]).css('display') == 'none')  // B65-ZK-1925, B65-ZK-1932: Use jQuery's .css() function to determine the property	
 				ignorePrev = true;
 			else {
 				zs = $zkc[0].style;
@@ -105,41 +105,6 @@ it will be useful, but WITHOUT ANY WARRANTY.
 		return !zk.ie ? Math.max(0, start) : start; // ie may have a wrong gap
 	}
 	
-	function _getContentEdgeHeight(cwgt) {
-		var p = cwgt.$n(),
-			c = cwgt.firstChild ? cwgt.firstChild.$n() : p.firstChild,
-			zkp = zk(p),
-			h = zkp.padBorderHeight();
-		
-		if (c) {
-			c = c.parentNode;
-			while (c && p != c) {
-				var zkc = zk(c);
-				h += zkc.padBorderHeight() + zkc.sumStyles("tb", jq.margins);
-				c = c.parentNode;
-			}
-			return h;
-		}
-		return 0;
-	}
-	function _getContentEdgeWidth(cwgt) {
-		var p = cwgt.$n(),
-			c = cwgt.firstChild ? cwgt.firstChild.$n() : p.firstChild,
-			zkp = zk(p),
-			w = zkp.padBorderWidth();
-		
-		if (c) {
-			c = c.parentNode;
-			while (c && p != c) {
-				var zkc = zk(c);
-				w += zkc.padBorderWidth() + zkc.sumStyles("lr", jq.margins);
-				c = c.parentNode;
-			}
-			return w;
-		}
-		return 0;
-	}
-	
 	// check whether the two elements are the same baseline, if so, we need to
 	// sum them together.
 	function _isSameBaseline(ref, cur, vertical) {
@@ -166,7 +131,7 @@ it will be useful, but WITHOUT ANY WARRANTY.
 				wgt.setFlexSize_({height:'auto'}, true);
 				var totalsz = 0,
 					vmax = 0;
-				if (cwgt){ //try child widgets
+				if (cwgt && cwgt.desktop){ //try child widgets, bug ZK-1575: should check if child widget is bind to desktop
 					var first = cwgt,
 						refDim = zk(cwgt).dimension(true);
 					for (; cwgt; cwgt = cwgt.nextSibling) { //bug 3132199: hflex="min" in hlayout
@@ -255,8 +220,7 @@ it will be useful, but WITHOUT ANY WARRANTY.
 			var margin = wgt.getMarginSize_(o);
 			if (zk.safari && margin < 0) 
 				margin = 0;
-
-			sz = wgt.setFlexSize_({height:(max + _getContentEdgeHeight(wgt) + margin)}, true);
+			sz = wgt.setFlexSize_({height:(max + wgt.getContentEdgeHeight_() + margin)}, true);
 			if (sz && sz.height >= 0)
 				wgt._vflexsz = sz.height + margin;
 			wgt.afterChildrenMinFlex_('h');
@@ -361,7 +325,8 @@ it will be useful, but WITHOUT ANY WARRANTY.
 			var margin = wgt.getMarginSize_(o);
 			if (zk.safari && margin < 0)
 				margin = 0;
-			var sz = wgt.setFlexSize_({width:(max + _getContentEdgeWidth(wgt) + margin)}, true);
+			
+			var sz = wgt.setFlexSize_({width: max + wgt.getContentEdgeWidth_() + margin}, true);			
 			if (sz && sz.width >= 0)
 				wgt._hflexsz = sz.width + margin;
 			wgt.afterChildrenMinFlex_('w');
@@ -427,7 +392,7 @@ zFlex = { //static methods
 			wdh = psz.width,
 			c = p.firstChild,
 			scrWdh;
-			
+		
 		// Bug 3185686, B50-ZK-452
 		if(zkp.hasVScroll()) //with vertical scrollbar
 			wdh -= (scrWdh = jq.scrollbarWidth());
@@ -452,6 +417,21 @@ zFlex = { //static methods
 					offwdh = offhgh > 0 ? zkc.offsetWidth() : 0,
 					cwgt = zk.Widget.$(c, {exact: 1});
 				
+				//Bug ZK-1647: should consider header width
+				//Bug Flex-138: skip if width exists
+				if (offwdh == 0 && zk.isLoaded('zul.mesh') && cwgt && cwgt.$instanceof(zul.mesh.HeaderWidget))
+					offwdh = jq(c).width();
+				
+				//Bug ZK-1706: should consider all text node size
+				if (pretxt) {
+					if (!zkpOffset)
+						zkpOffset = zkp.cmOffset();
+					if (!cwgt || !cwgt.isExcludedHflex_()) // fixed ZK-1706 sideeffect for B60-ZK-917.zul
+						wdh -= _getTextWidth(zkc, zkp, zkpOffset);
+
+					if (!cwgt || !cwgt.isExcludedVflex_()) // fixed ZK-1706 sideeffect for B60-ZK-917.zul
+						hgh -= _getTextHeight(zkc, zkp, zkpOffset);
+				}
 				//horizontal size
 				if (cwgt && cwgt._nhflex) {
 					if (cwgt !== wgt)
@@ -459,15 +439,13 @@ zFlex = { //static methods
 					if (cwgt._hflex == 'min') {
 						wdh -= zFlex.fixMinFlex(cwgt, c, 'w');
 					} else {
-						if (pretxt) {
-							if (!zkpOffset)
-								zkpOffset = zkp.cmOffset();
-							wdh -= _getTextWidth(zkc, zkp, zkpOffset);
-						}
 						hflexs.push(cwgt);
 						hflexsz += cwgt._nhflex;
 					}
-				} else if (!cwgt || !cwgt.isExcludedHflex_()) {
+				} else if ((!cwgt &&
+						// panelchild cannot include panel's bottombar.
+						(!zk.isLoaded('zul.wnd') || !wgt.$instanceof(zul.wnd.Panelchildren))) 
+						|| (cwgt && !cwgt.isExcludedHflex_())) {
 					wdh -= offwdh;
 					wdh -= zkc.sumStyles("lr", jq.margins);
     			}
@@ -479,11 +457,6 @@ zFlex = { //static methods
 					if (cwgt._vflex == 'min') {
 						hgh -= zFlex.fixMinFlex(cwgt, c, 'h');
 					} else {
-						if (pretxt) {
-							if (!zkpOffset)
-								zkpOffset = zkp.cmOffset();
-							hgh -= _getTextHeight(zkc, zkp, zkpOffset);
-						}
 						vflexs.push(cwgt);
 						vflexsz += cwgt._nvflex;
 					}
@@ -541,6 +514,30 @@ zFlex = { //static methods
 		//notify parent widget that all of its children with hflex/vflex is done.
 		wgt.parent.afterChildrenFlex_(wgt);
 		wgt._flexFixed = false;
+		
+		/* 
+		 * ZK-1957:	
+		 * the head of mesh widget should give fixed width 
+		 * when one of headers have min hflex
+		 */
+		if(wgt.$instanceof(zul.mesh.HeaderWidget) ) {
+			var mesh = wgt.getMeshWidget(),
+				nhead = mesh.$n('head');
+				
+			if(nhead) {
+				var head = mesh.getHeadWidget(),
+					wd = 0;
+				
+				for (var c = head.firstChild; c; c = c.nextSibling ) {
+					var cn = c.$n(),
+						w = !c.getHflex() ? cn.style.width : cn.offsetWidth;
+					if(w && ((w = parseInt(w)) > 0)) 
+						wd += w;
+				}
+			
+				nhead.style.width = jq.px(wd);
+			}
+		}
 	},
 	onFitSize: function () {
 		var wgt = this,

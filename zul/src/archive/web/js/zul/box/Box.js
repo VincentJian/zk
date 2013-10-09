@@ -365,8 +365,8 @@ zul.box.Box = zk.$extends(zul.Widget, {
 			if (!isCell)
 				oo.push('</td>');
 		}
-		
-		if (child.nextSibling)
+		var next = child.nextSibling; //Bug ZK-1526: popup should not consider spacing
+		if (next && !next.$instanceof(zul.wgt.Popup))
 			oo.push(_spacingHTML(this, child));
 		else if (prefixSpace) {
 			var pre = child.previousSibling;
@@ -392,8 +392,13 @@ zul.box.Box = zk.$extends(zul.Widget, {
 						kid.setFlexSize_({height:'', width:''});
 						var chdex = kid.$n('chdex');
 						if (chdex) {
-							chdex.style.height = szes && k < szes.length ? szes[k] : '';
-							chdex.style.width = '';
+							var n;
+							if ((n = kid.$n()) && (n.scrollTop || n.scrollLeft)) // keep the scroll status
+								;// do nothing Bug ZK-1885: scrollable div (with vflex) and tooltip
+							else {
+								chdex.style.height = szes && k < szes.length ? szes[k] : '';
+								chdex.style.width = '';
+							}
 						}
 					}
 				}
@@ -405,8 +410,13 @@ zul.box.Box = zk.$extends(zul.Widget, {
 						kid.setFlexSize_({height:'', width:''});
 						var chdex = kid.$n('chdex');
 						if (chdex) {
-							chdex.style.width = szes && k < szes.length ? szes[k] : '';
-							chdex.style.height = '';
+							var n;
+							if ((n = kid.$n()) && (n.scrollTop || n.scrollLeft)) // keep the scroll status
+								;// do nothing Bug ZK-1885: scrollable div (with vflex) and tooltip
+							else {
+								chdex.style.width = szes && k < szes.length ? szes[k] : '';
+								chdex.style.height = '';
+							}
 						}
 					}
 				}
@@ -423,6 +433,14 @@ zul.box.Box = zk.$extends(zul.Widget, {
 			hgh = zkp.revisedHeight(curhgh < offhgh ? curhgh : offhgh),
 			wdh = zkp.revisedWidth(curwdh < offwdh ? curwdh : offwdh);
 		return zkp ? {height: hgh, width: wdh} : {};
+	},
+	//Bug ZK-1569: add minium 1px width on <td> to pass isWatchable_
+	afterResetChildSize_: function () {
+		for (var kid = this.firstChild, vert = this.isVertical(); kid; kid = kid.nextSibling) {				
+			var chdex = vert ? kid.$n('chdex').firstChild : kid.$n('chdex');
+			if (chdex)
+				chdex.style.minWidth = '1px';
+		}
 	},
 	//bug#3042306
 	resetSize_: function (orient) { //@Overrid zk.Widget#resetSize_, called when beforeSize

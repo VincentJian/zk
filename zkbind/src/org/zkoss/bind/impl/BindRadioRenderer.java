@@ -14,10 +14,8 @@ package org.zkoss.bind.impl;
 
 import java.io.Serializable;
 
+import org.zkoss.bind.sys.TemplateResolver;
 import org.zkoss.lang.Objects;
-import org.zkoss.xel.VariableResolverX;
-import org.zkoss.xel.XelContext;
-import org.zkoss.xel.XelException;
 import org.zkoss.zk.ui.Component;
 import org.zkoss.zk.ui.UiException;
 import org.zkoss.zk.ui.util.ForEachStatus;
@@ -45,15 +43,15 @@ public class BindRadioRenderer extends AbstractRenderer implements RadioRenderer
 		} else {
 			final ForEachStatus iterStatus = new AbstractForEachStatus(){//provide iteration status in this context
 				private static final long serialVersionUID = 1L;
-				@Override
+				
 				public int getIndex() {
 					return index;
 				}
-				@Override
+				
 				public Object getEach(){
 					return data;
 				}
-				@Override
+				
 				public Integer getEnd(){
 					return size;
 				}
@@ -84,6 +82,9 @@ public class BindRadioRenderer extends AbstractRenderer implements RadioRenderer
 			
 			nr.setAttribute(itervarnm, iterStatus);
 			
+			//ZK-1787 When the viewModel tell binder to reload a list, the other component that bind a bean in the list will reload again
+			//move TEMPLATE_OBJECT (was set in resoloveTemplate) to current for check in addTemplateTracking
+			nr.setAttribute(TemplateResolver.TEMPLATE_OBJECT, item.removeAttribute(TemplateResolver.TEMPLATE_OBJECT));
 			//add template dependency
 			addTemplateTracking(radiogroup, nr, data, index, size);
 			

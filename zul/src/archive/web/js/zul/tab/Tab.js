@@ -132,7 +132,11 @@ zul.tab.Tab = zk.$extends(zul.LabelImageWidget, {
 	},
 	_sel: function(notify, init) {
 		var tabbox = this.getTabbox();
-		if (!tabbox) return;
+		
+		/* ZK-1441
+		 * If tabbox is animating (end-user click different tabs quickly), ignore this action.
+		 */
+		if (!tabbox || tabbox._animating) return;
 
 		var	tabs = this.parent,
 			oldtab = tabbox._selTab;
@@ -158,7 +162,7 @@ zul.tab.Tab = zk.$extends(zul.LabelImageWidget, {
 			tabbox._selTab = tab; //avoid loopback
 			var ps;
 			if (ps = tabbox.tabpanels){
-				if(ps._selPnl && ps._selPnl != panel) ps._selPnl._sel(false,false);
+				if(ps._selPnl && ps._selPnl != panel) ps._selPnl._sel(false, tabbox.inAccordionMold());
 				ps._selPnl = panel; //stored in tabpanels
 			}
 		}
@@ -171,7 +175,7 @@ zul.tab.Tab = zk.$extends(zul.LabelImageWidget, {
 		else
 			jq(tab).removeClass(zcls + "-seld");
 
-		if (panel)
+		if (panel && panel.isVisible()) //Bug ZK-1618: not show tabpanel if visible is false
 			panel._sel(toSel, !init);
 
 		if (!tabbox.inAccordionMold()) {
@@ -217,7 +221,10 @@ zul.tab.Tab = zk.$extends(zul.LabelImageWidget, {
 	domClass_: function (no) {
 		var scls = this.$supers('domClass_', arguments);
 		if (!no || !no.zclass) {
-			var added = this.isDisabled() ? this.getZclass() + '-disd' : '';
+			var zcls = this.getZclass(),
+				added = this.isDisabled() ? zcls + '-disd' : '';
+			if (this.isSelected())
+				added += ' ' + zcls + '-seld';
 			if (added) scls += (scls ? ' ': '') + added;
 		}
 		return scls;

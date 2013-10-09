@@ -99,7 +99,11 @@ public class ExecutionImpl extends AbstractExecution {
 		_response = response;
 		_xelctx = new ReqContext();
 
-		Servlets.getBrowser(request); //update request info
+
+		// the execution may be fake if request is null.
+		// Fixed for ZK-1890: Can't subscribe eventqueue in desktop cleanup
+		if (request != null)
+			Servlets.getBrowser(request); //update request info
 
 		_attrs = new AttributesMap() {
 			@SuppressWarnings("unchecked")
@@ -438,15 +442,15 @@ public class ExecutionImpl extends AbstractExecution {
 	public boolean isHilDevice() {
 		return Servlets.isHilDevice(_request);
 	}
-	@Override
+	
 	public Double getBrowser(String name) {
 		return Servlets.getBrowser(_request, name);
 	}
-	@Override
+	
 	public String getBrowser() {
 		return Servlets.getBrowser(_request);
 	}
-	@Override
+	
 	public String getUserAgent() {
 		return Servlets.getUserAgent(_request);
 	}

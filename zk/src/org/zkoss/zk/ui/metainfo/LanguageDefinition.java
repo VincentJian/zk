@@ -25,6 +25,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.LinkedList;
 import java.util.Collections;
+
 import org.zkoss.lang.Objects;
 import org.zkoss.util.FastReadArray;
 import org.zkoss.util.CollectionsX;
@@ -34,7 +35,6 @@ import org.zkoss.xel.taglib.Taglibs;
 import org.zkoss.xel.taglib.Taglib;
 import org.zkoss.html.JavaScript;
 import org.zkoss.html.StyleSheet;
-
 import org.zkoss.zk.mesg.MZk;
 import org.zkoss.zk.ui.Component;
 import org.zkoss.zk.ui.ext.Macro;
@@ -73,7 +73,7 @@ public class LanguageDefinition {
 	 * @since 3.0.0
 	 */
 	public static final String NATIVE_NAMESPACE = "http://www.zkoss.org/2005/zk/native";
-	/*** The namespace for ZK client (aka., widget). It is used to specify
+	/*** The namespace for ZK client (a.k.a., widget). It is used to specify
 	 * the widget's properties and event listeners.
 	 * <p>Notice that {@link #CLIENT_NAMESPACE} specifies the property
 	 * or event listener for a widget, while {@link #CLIENT_ATTRIBUTE_NAMESPACE}
@@ -93,7 +93,7 @@ public class LanguageDefinition {
 	 * @since 5.0.3
 	 */
 	public static final String CLIENT_ATTRIBUTE_NAMESPACE = "http://www.zkoss.org/2005/zk/client/attribute";
-	/** The namespace for annoation. It is mainly used to resolve the conflict
+	/** The namespace for annotation. It is mainly used to resolve the conflict
 	 * between a normal value and an annotation.
 	 * @since 6.0.0
 	 */
@@ -318,7 +318,7 @@ public class LanguageDefinition {
 		}
 	}
 
-	/** Constructs a language defintion.
+	/** Constructs a language definition.
 	 *			
 	 * <p>Note: the name and namespace of any language cannot be the same.
 	 * In other words, each language has two names, name and namespace.
@@ -373,7 +373,7 @@ public class LanguageDefinition {
 				log.warning("Replicated language: "+name+", overriden by "+this);
 			//it is possible if zcommon.jar is placed in both
 			//WEB-INF/lib and shared/lib, i.e., appear twice in the class path
-			//We overwrite because shared/lib apears first due to
+			//We overwrite because shared/lib appears first due to
 			//getResources is used (parent first)
 			}
 		}
@@ -400,7 +400,7 @@ public class LanguageDefinition {
 	/** Returns the device type that this definition belongs to.
 	 *
 	 * <p>A device type identifies the type of a client. For example, "ajax"
-	 * represents all HTML compatible clients (aka., browsers),
+	 * represents all HTML compatible clients (a.k.a., browsers),
 	 * while "mil" represents clients that supports
 	 * <i>Mobile Interactive markup Language</i> (on Limited Connected Device,
 	 * such as mobile phones).
@@ -557,18 +557,18 @@ public class LanguageDefinition {
 		if (zslang == null || zslang.length() == 0)
 			throw new IllegalArgumentException("null or empty language");
 		if (script != null && script.length() > 0) {
-			zslang = zslang.toLowerCase();
+			zslang = zslang.toLowerCase(java.util.Locale.ENGLISH);
 			synchronized (_initscripts) {
 				final String s = _initscripts.get(zslang);
 				_initscripts.put(zslang, s != null ? s + '\n' + script: script);
 			}
 		}
 	}
-	/** Returns the intial scripts of
+	/** Returns the initial scripts of
 	 * the specified language, or null if no script.
 	 */
 	public String getInitScript(String zslang) {
-		zslang = zslang.toLowerCase();
+		zslang = zslang.toLowerCase(java.util.Locale.ENGLISH);
 		synchronized (_initscripts) {
 			return _initscripts.get(zslang);
 		}
@@ -586,7 +586,7 @@ public class LanguageDefinition {
 		if (zslang == null || zslang.length() == 0)
 			throw new IllegalArgumentException("null or empty language");
 		if (script != null && script.length() > 0) {
-			zslang = zslang.toLowerCase();
+			zslang = zslang.toLowerCase(java.util.Locale.ENGLISH);
 			synchronized (_eachscripts) {
 				final String s = _eachscripts.get(zslang);
 				_eachscripts.put(zslang, s != null ? s + '\n' + script: script);
@@ -600,7 +600,7 @@ public class LanguageDefinition {
 	 * zscript.
 	 */
 	public String getEachTimeScript(String zslang) {
-		zslang = zslang.toLowerCase();
+		zslang = zslang.toLowerCase(java.util.Locale.ENGLISH);
 		synchronized (_eachscripts) {
 			return _eachscripts.get(zslang);
 		}
@@ -633,10 +633,9 @@ public class LanguageDefinition {
 	public Collection<JavaScript> getJavaScripts() {
 		return new CollectionsX.ArrayCollection<JavaScript>(_js.toArray());
 	}
-
 	/** Merge a JavaScript package, say pkgFrom, to another package, say pkgTo,
 	 * such that, when loading pkgTo, pkgFrom will be placed in the same WPD file.
-	 * Thus, the number of WPD fiels to load will be reduced, and
+	 * Thus, the number of WPD fields to load will be reduced, and
 	 * the load time will be improved.
 	 * <p>Notice that
 	 * <ul>
@@ -770,7 +769,7 @@ public class LanguageDefinition {
 	}
 	/** Instantiates and returns the component definition for the specified condition.
 	 *
-	 * @param pgdef the page definition the macro definitioin belongs to.
+	 * @param pgdef the page definition the macro definition belongs to.
 	 * If null, it belongs to this language definition.
 	 * @param macroURI the ZUML page's URI that is used to render
 	 * instances of this macro definition.
@@ -859,7 +858,7 @@ public class LanguageDefinition {
 		_dyntagRvAttrs = compnm == null || reservedAttrs.isEmpty() ? null:
 			Collections.unmodifiableSet(new HashSet<String>(reservedAttrs));
 	}
-	/** Returns the component defintion of the dynamic tag, or null if
+	/** Returns the component definition of the dynamic tag, or null if
 	 * this language doesn't support the dynamic tag.
 	 * @exception DefinitionNotFoundException is thrown if the definition
 	 * is not found
@@ -936,9 +935,9 @@ public class LanguageDefinition {
 	private class LabelTemplate {
 		/** The component definition. */
 		private ComponentDefinition _compdef;
-		/** The component name used for contructing a label. */
+		/** The component name used for constructing a label. */
 		private final String _name;
-		/** The component property used for contructing a label. */
+		/** The component property used for constructing a label. */
 		private final String _prop;
 		/** Whether the raw label is required. */
 		private final boolean raw;

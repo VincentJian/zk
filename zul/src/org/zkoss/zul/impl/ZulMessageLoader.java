@@ -32,6 +32,5 @@ public class ZulMessageLoader implements MessageLoader {
 	public void load(StringBuffer out, Execution exec) throws IOException {
 		out.append(Devices.loadJavaScript(exec, "~./js/zul/lang/msgzul*.js"));
 		out.append(Utils.outLocaleJavaScript());
-	}
-	
+	}	
 }

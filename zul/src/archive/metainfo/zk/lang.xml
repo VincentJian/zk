@@ -22,14 +22,13 @@ Copyright (C) 2005 Potix Corporation. All Rights Reserved.
 
 	<version>
 		<version-class>org.zkoss.zul.Version</version-class>
-		<version-uid>6.5.1</version-uid>
+		<version-uid>6.5.5</version-uid>
 	</version>
 
 	<renderer-class>org.zkoss.zul.impl.PageRenderer</renderer-class>
 	<message-loader-class>org.zkoss.zul.impl.ZulMessageLoader</message-loader-class>
 
 	<javascript package="zk"/>
-	<javascript package="zul.lang"/>
 	<javascript package="zul" merge="true"/><!-- merge since usually required though optional -->
 	<javascript package="zul.wgt" merge="true"/><!-- merge since usually required though optional -->
 
@@ -576,15 +575,6 @@ def alert(m):
 		<mold>
 			<mold-name>default</mold-name>
 			<mold-uri>mold/flash.js</mold-uri>
-		</mold>
-	</component>
-	<component>
-		<component-name>flashchart</component-name>
-		<component-class>org.zkoss.zul.Flashchart</component-class>
-		<widget-class>zul.fchart.Flashchart</widget-class>
-		<mold>
-			<mold-name>default</mold-name>
-			<mold-uri>mold/flashchart.js</mold-uri>
 		</mold>
 	</component>
 	<component>

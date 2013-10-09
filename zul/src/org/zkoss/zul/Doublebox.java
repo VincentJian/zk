@@ -16,11 +16,11 @@ Copyright (C) 2006 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zul;
 
+import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 
 import org.zkoss.zk.ui.ArithmeticWrongValueException;
 import org.zkoss.zk.ui.WrongValueException;
-
 import org.zkoss.zul.mesg.MZul;
 import org.zkoss.zul.impl.NumberInputElement;
 
@@ -93,7 +93,7 @@ public class Doublebox extends NumberInputElement {
 		return _zclass == null ? "z-doublebox" : _zclass;
 	}
 	public Object unmarshall(Object value) {
-		return value instanceof Number ? //sometimes Json might interpret value to Integer
+		return value instanceof Number ? //sometimes JSON might interpret value to Integer
 			new Double(((Number)value).doubleValue()) : value;
 	}
 	protected Object coerceFromString(String value) throws WrongValueException {
@@ -124,12 +124,14 @@ public class Doublebox extends NumberInputElement {
 		}
 	}
 	/*package*/ static String toLocaleString(Double v, java.util.Locale locale) {
+		// B65-ZK-1909: Remove .0 part
+		final DecimalFormat df = new DecimalFormat("#.#");
 		final DecimalFormatSymbols symbols =
 			new DecimalFormatSymbols(locale);
 		final char DECIMAL = symbols.getDecimalSeparator();
 		final char MINUS = symbols.getMinusSign();
 		// only replace MINUS and DECIMAL as toPlainString() implementation
 		// only involves these two chars. 
-		return v.toString().replace('.', DECIMAL).replace('-', MINUS);
+		return df.format(v).toString().replace('.', DECIMAL).replace('-', MINUS);
 	}
 }

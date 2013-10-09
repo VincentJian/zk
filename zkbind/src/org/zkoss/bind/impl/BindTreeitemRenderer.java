@@ -12,10 +12,8 @@ Copyright (C) 2011 Potix Corporation. All Rights Reserved.
 
 package org.zkoss.bind.impl;
 
+import org.zkoss.bind.sys.TemplateResolver;
 import org.zkoss.lang.Objects;
-import org.zkoss.xel.VariableResolverX;
-import org.zkoss.xel.XelContext;
-import org.zkoss.xel.XelException;
 import org.zkoss.zk.ui.Component;
 import org.zkoss.zk.ui.UiException;
 import org.zkoss.zk.ui.util.ForEachStatus;
@@ -53,15 +51,15 @@ public class BindTreeitemRenderer extends AbstractRenderer implements TreeitemRe
 
 			final ForEachStatus iterStatus = new AbstractForEachStatus(){//provide iteration status in this context
 				private static final long serialVersionUID = 1L;
-				@Override
+				
 				public int getIndex() {
 					return index;
 				}
-				@Override
+				
 				public Object getEach(){
 					return data;
 				}
-				@Override
+				
 				public Integer getEnd(){
 					throw new UiException("end attribute is not supported");
 				}
@@ -89,9 +87,16 @@ public class BindTreeitemRenderer extends AbstractRenderer implements TreeitemRe
 
 			final Treeitem ti = (Treeitem)items[0];
 			ti.setAttribute(BinderImpl.VAR, varnm); // for the converter to get the value
-			addItemReference(tree, ti, tree.getModel().getPath(data), varnm); //kept the reference to the data, before ON_BIND_INIT
+			//zk-1698, mvvm tree performance issue, 
+			//no need to use reference binding for tree because we don't allow it to notify a path change also.
+			ti.setAttribute(varnm,data); 
 			
 			ti.setAttribute(itervarnm, iterStatus);
+			
+			//ZK-1787 When the viewModel tell binder to reload a list, the other component that bind a bean in the list will reload again
+			//move TEMPLATE_OBJECT (was set in resoloveTemplate) to current for check in addTemplateTracking
+			ti.setAttribute(TemplateResolver.TEMPLATE_OBJECT, parent.removeAttribute(TemplateResolver.TEMPLATE_OBJECT));
+			
 			//add template dependency
 			addTemplateTracking(tree, ti, data, index, -1);
 			

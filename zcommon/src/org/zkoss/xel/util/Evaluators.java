@@ -38,7 +38,7 @@ import org.zkoss.xel.VariableResolver;
 import org.zkoss.xel.VariableResolverX;
 
 /**
- * It mapps a name with an evaluator implementation.
+ * It maps a name with an evaluator implementation.
  *
  * @author tomyeh
  * @since 3.0.0
@@ -64,7 +64,7 @@ public class Evaluators {
 
 		if (!_loaded) load();
 
-		final String evalnm = name.toLowerCase();
+		final String evalnm = name.toLowerCase(java.util.Locale.ENGLISH);
 		final Object clsnm;
 		synchronized (_evals) {
 			clsnm = _evals.get(evalnm);
@@ -85,7 +85,7 @@ public class Evaluators {
 			}
 		}
 	}
-	/** Tests whether the evaluator (aka., the expression factory)
+	/** Tests whether the evaluator (a.k.a., the expression factory)
 	 * for the specified evaluator name
 	 * exists.
 	 *
@@ -96,18 +96,18 @@ public class Evaluators {
 
 		if (!_loaded) load();
 
-		name = name.toLowerCase();
+		name = name.toLowerCase(java.util.Locale.ENGLISH);
 		synchronized (_evals) {
 			return _evals.containsKey(name);
 		}
 	}
 
 	/** Adds an evaluator
-	 * (aka., the expression factory, {@link ExpressionFactory}).
+	 * (a.k.a., the expression factory, {@link ExpressionFactory}).
 	 *
 	 * @param name the name of the evaluator, say, MVEL.
 	 * It is case insensitive.
-	 * @param evalcls the class name of the evaluator, aka., the expression factory
+	 * @param evalcls the class name of the evaluator, a.k.a., the expression factory
 	 * ({@link ExpressionFactory}).
 	 * @return the previous class name, or null if not defined yet
 	 */
@@ -118,7 +118,7 @@ public class Evaluators {
 
 		if (log.debugable()) log.debug("Evaluator is added: "+name+", "+evalcls);
 
-		final String evalnm = name.toLowerCase();
+		final String evalnm = name.toLowerCase(java.util.Locale.ENGLISH);
 		final Object old;
 		synchronized (_evals) {
 			old = _evals.put(evalnm, evalcls);

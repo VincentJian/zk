@@ -221,7 +221,7 @@ zul.db.Datebox = zk.$extends(zul.inp.FormatWidget, {
 		 * @return Array
 		 */
 		displayedTimeZones: function (dtzones) {
-			this._dtzones = dtzones.split(",");
+			this._dtzones = dtzones ? dtzones.split(",") : null;
 		},
 		/** Sets the unformater function. This method is called from Server side.
 		 * @param String unf the unformater function
@@ -576,17 +576,23 @@ zul.db.CalendarPop = zk.$extends(zul.db.Calendar, {
 	setLocalizedSymbols: function (symbols) {
 		this._localizedSymbols = symbols;
 	},
+	//B65-ZK-1904: Does not need to sync shadow in rerender, it syncs in _reposition function
+	/*
 	rerender: function () {
 		this.$supers('rerender', arguments);
 		if (this.desktop) this.syncShadow();
 	},
+	*/
 	close: function (silent) {
 		var db = this.parent,
 			pp = db.$n("pp");
 
 		if (!pp || !zk(pp).isVisible()) return;
-		if (this._shadow) this._shadow.hide();
-
+		if (this._shadow) {
+			// B65-ZK-1904: Make shadow behavior the same as ComboWidget
+			this._shadow.destroy();
+			this._shadow = null;
+		}
 		var zcls = db.getZclass();
 		pp.style.display = "none";
 		pp.className = zcls + "-pp";
@@ -701,8 +707,10 @@ zul.db.CalendarPop = zk.$extends(zul.db.Calendar, {
 			date.setHours(time.getHours(), time.getMinutes(), time.getSeconds(), time.getMilliseconds());
 		}
 		
-		db.getInputNode().value = db.coerceToString_(date);
-
+		//Bug ZK-1712: no need to set datebox input value when shift view
+		if (!evt.data.shiftView)
+			db.getInputNode().value = db.coerceToString_(date);
+		
 		if (this._view == 'day' && evt.data.shallClose !== false) {
 			this.close();
 			db._inplaceout = true;

@@ -299,25 +299,66 @@ tr.z-groupfoot td.z-groupfoot-inner {
 tr.z-groupfoot td.z-groupfoot-inner {
 	padding: 5px 4px 5px 6px;
 }
-tr.z-grid-odd td.z-row-inner,
-tr.z-grid-odd .z-cell {
+
+<%-- Bug ZK-1234: use child selector for nested grids does not properly display alternating odd/even rows --%>
+tr.z-grid-odd > td.z-row-inner,
+tr.z-grid-odd > .z-cell {
 	border-left: 1px solid transparent;
 	background-color: #F7F7F7;
 	border-top: 1px solid #F7F7F7;
 	border-bottom: 1px solid #F7F7F7;
 	border-left: 1px solid #FFF;
 }
-tr.z-grid-odd td.z-row-inner,
-tr.z-grid-odd .z-cell,
+tr.z-grid-odd > td.z-row-inner,
+tr.z-grid-odd > .z-cell,
 tr.z-grid-odd {
 	background: #F7F7F7;
 }
+
+<c:if test="${zk.ie > 6 || zk.opera > 0}">
+tr.z-row > td.z-row-inner {
+	background-color: #FFF;
+}
+
+tr.z-grid-odd > td.z-row-inner {
+	background-color: #F7F7F7;
+}
+</c:if>
+
+<%-- 
+     Bug ZK-1234
+     Note: IE6 does not support child selector nor negation pseudo-class
+     Using * hack only provides partial workaround upto 3 level of nesting
+     Need to repeat the pattern if more level of nesting is required.
+     However, nesting too many levels of grid components is not recommended 
+     anyway so this limitation on IE6 should not cause too much trouble.
+--%>
+
+<c:if test="${zk.ie <= 6}">
+tr.z-grid-odd td.z-row-inner {
+    background-color: #F7F7F7;
+}
+tr.z-grid-odd * td.z-row-inner {
+    background-color: #FFF;
+}
+tr.z-grid-odd tr.z-grid-odd td.z-row-inner {
+    background-color: #F7F7F7;
+}
+tr.z-grid-odd tr.z-grid-odd * td.z-row-inner {
+    background-color: #FFF;
+}
+tr.z-grid-odd tr.z-grid-odd tr.z-grid-odd td.z-row-inner {
+    background-color: #F7F7F7;
+}
+tr.z-grid-odd tr.z-grid-odd tr.z-grid-odd * td.z-row-inner {
+    background-color: #FFF;
+}
+</c:if>
 
 tr.z-row-over > td.z-row-inner {
 	border-top: 1px solid #e3f2ff;
 	border-bottom: 1px solid #e3f2ff;
 }
-
 
 tr.z-row-over > td.z-row-inner, tr.z-row-over > .z-cell {
 	background-image: url(${c:encodeThemeURL('~./zul/img/grid/column-over.png')});

@@ -53,7 +53,7 @@ public class Interpreters {
 	private Interpreters() { //disable it
 	}
 
-	/** Returns the interpter for the specified language name.
+	/** Returns the interpreter for the specified language name.
 	 *
 	 * @param zslang the name of the scripting language, say, Java.
 	 * @exception InterpreterNotFoundException if not found.
@@ -62,7 +62,7 @@ public class Interpreters {
 		if (zslang == null || zslang.length() == 0 || owner == null)
 			throw new IllegalArgumentException("empty or null");
 
-		final String zsl = zslang.toLowerCase();
+		final String zsl = zslang.toLowerCase(java.util.Locale.ENGLISH);
 		final Object clsnm;
 		synchronized (_ips) {
 			clsnm = _ips.get(zsl);
@@ -107,7 +107,7 @@ public class Interpreters {
 	public static final boolean exists(String zslang) {
 		if (zslang == null) return false;
 
-		zslang = zslang.toLowerCase();
+		zslang = zslang.toLowerCase(java.util.Locale.ENGLISH);
 		synchronized (_ips) {
 			return _ips.containsKey(zslang);
 		}
@@ -140,7 +140,7 @@ public class Interpreters {
 		if (log.debugable()) log.debug("Scripting language is added: "+zslang+", "+ipcls);
 		_zslangs.add(zslang);
 
-		final String zsl = zslang.toLowerCase();
+		final String zsl = zslang.toLowerCase(java.util.Locale.ENGLISH);
 		final Object old;
 		synchronized (_ips) {
 			old = _ips.put(zsl, ipcls);
@@ -168,7 +168,7 @@ public class Interpreters {
 	 * @return the previous class, or null if not defined yet
 	 */
 	public static final String add(Element config) {
-		//Spec: it is OK to declare an nonexist interpreter, since
+		//Spec: it is OK to declare an nonexistent interpreter, since
 		//deployer might remove unused jar files.
 		final String zslang =
 			IDOMs.getRequiredElementValue(config, "language-name");

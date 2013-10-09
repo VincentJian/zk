@@ -82,7 +82,7 @@ public class CommonFns {
 	public static char toChar(Object val) {
 		return ((Character)Classes.coerce(char.class, val)).charValue();
 	}
-	/** Tests whehter an object, o, is an instance of a class, c.
+	/** Tests whether an object, o, is an instance of a class, c.
 	 */
 	public static boolean isInstance(Object c, Object o) {
 		if (c instanceof Class) {
@@ -536,7 +536,7 @@ public class CommonFns {
 	}
 	private static final int toStyle (String style) {
 		if (style != null) {
-			style = style.trim().toLowerCase();
+			style = style.trim().toLowerCase(java.util.Locale.ENGLISH);
 			return "short".equals(style) ? DateFormat.SHORT
 					: "medium".equals(style) ? DateFormat.MEDIUM
 					: "long".equals(style) ? DateFormat.LONG

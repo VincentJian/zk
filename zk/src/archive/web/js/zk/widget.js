@@ -67,7 +67,8 @@ it will be useful, but WITHOUT ANY WARRANTY.
 			case 'focus':
 				if (wgt.canActivate()) {
 					zk.currentFocus = wgt;
-					zWatch.fire('onFloatUp', wgt); //notify all
+					//add triggerByFocus option for notification
+					zWatch.fire('onFloatUp', wgt, {triggerByFocus: true}); //notify all
 					break;
 				}
 				return; //ignore it
@@ -138,8 +139,12 @@ it will be useful, but WITHOUT ANY WARRANTY.
 		if (!nest || wgt.z_rod === 9) { //Bug 2948829: don't delete value set by real ROD
 			delete wgt.z_rod;
 
-			for (var child = wgt.firstChild; child; child = child.nextSibling)
+			for (var child = wgt.firstChild; child; child = child.nextSibling) {
 				_unbindrod(child, true);
+				//Bug ZK-1827: native component with rod should also store the widget for used in mount.js(create function)
+				if (child.$instanceof(zk.Native))
+					zAu._storeStub(child);
+			}
 		}
 	}
 
@@ -272,7 +277,8 @@ it will be useful, but WITHOUT ANY WARRANTY.
 				//s.t., Window's rerender could gain focus back and receive onblur correctly
 			try {
 				cf.focus();
-				if (cfi.range && cf.getInputNode && (cf = cf.getInputNode()))
+				// B65-ZK-1803: Check if InputNode is visible or not
+				if (cfi.range && cf.getInputNode && (cf = cf.getInputNode()) && zk(cf).isRealVisible())
 					zk(cf).setSelectionRange(cfi.range[0], cfi.range[1]);
 			} finally {
 				_ignCanActivate = false;
@@ -427,10 +433,35 @@ it will be useful, but WITHOUT ANY WARRANTY.
 			else if (!wgt.isVisible()) break;
 		return false;
 	}
+	
+	function _fullScreenZIndex(zi) {
+		var pseudoFullscreen = null;
+		if (document.fullscreenElement) {
+			pseudoFullscreen = ":fullscreen";
+		} else if (document.mozFullScreen) {
+			//pseudoFullscreen = ":-moz-full-screen";
+			//Firefox return zindex by scientific notation "2.14748e+9"
+			//use zk.parseFloat() will get 2147480000, so return magic number directly.
+			return 2147483648;
+		} else if (document.webkitIsFullScreen) {
+			pseudoFullscreen = ":-webkit-full-screen";
+		}
+		if (pseudoFullscreen) {
+			var fsZI = jq.css(jq(pseudoFullscreen)[0],"zIndex");
+			return fsZI == "auto" ? 2147483648 : ++fsZI;
+		}
+		return zi;
+	}
 
 	//Returns the topmost z-index for this widget
 	function _topZIndex(wgt) {
 		var zi = 1800; // we have to start from 1800 depended on all the css files.
+		
+		//ZK-1226: Full Screen API will make element's ZIndex bigger than 1800
+		//	so set a higher zindex if browser is in full screen mode.
+		zi = _fullScreenZIndex(zi);
+		//
+		
 		for (var j = _floatings.length; j--;) {
 			var w = _floatings[j].widget,
 				wzi = zk.parseInt(w.getFloatZIndex_(_floatings[j].node));
@@ -454,6 +485,8 @@ it will be useful, but WITHOUT ANY WARRANTY.
 			delete wgt._z$rd;
 			wgt._norenderdefer = true;
 			wgt.replaceHTML('#' + wgt.uuid, wgt.parent ? wgt.parent.desktop: null, null, true);
+			if (wgt.parent)
+				wgt.parent.onChildRenderDefer_(wgt);
 		}
 	}
 
@@ -480,10 +513,12 @@ it will be useful, but WITHOUT ANY WARRANTY.
 			wgt.rerender(-1);
 		}
 	}
-	function _rerenderDone(wgt) {
+	function _rerenderDone(wgt, skipper /* Bug ZK-1463 */) {
 		for (var j = _rdque.length; j--;)
-			if (zUtl.isAncestor(wgt, _rdque[j]))
-				_rdque.splice(j, 1);
+			if (zUtl.isAncestor(wgt, _rdque[j])) {
+				if (!skipper || !skipper.skipped(wgt, _rdque[j]))
+					_rdque.splice(j, 1);
+			}
 	}
 
 	function _markCache(cache, visited, visible) {
@@ -1010,8 +1045,11 @@ new zul.wnd.Window({
 	setHflex_: function (v) {
 		this._nhflex = (true === v || 'true' == v) ? 1 : v == 'min' ? -65500 : zk.parseInt(v);
 		if (this._nhflex < 0 && v != 'min')
-			this._nhflex = 0; 
-		if (_binds[this.uuid] === this) { //if already bind
+			this._nhflex = 0;
+		if (this.desktop) { //ZK-1784 only update the components style when it is attached to desktop
+		                    //checking on (_binds[this.uuid] === this) as before does not work when 
+		                    //nested inside native component. in this case the nested component
+		                    //is bound earlier, when the native component is reused (mount.js create()) 
 			if (!this._nhflex) {
 				this.setFlexSize_({width: ''}); //clear the width
 				delete this._hflexsz;
@@ -1656,6 +1694,11 @@ wgt.$f().main.setTitle("foo");
 		var dom = opts && opts.dom,
 			cache = opts && opts.cache, visited = [], ck,
 			wgt = this;
+		
+		//Bug ZK-1692: widget may not bind or render yet.
+		if (!wgt.desktop)
+			return false;
+		
 		while (wgt) {
 			if (cache && (ck=wgt.uuid) && (ck=cache[ck]) !== undefined)
 				return _markCache(cache, visited, ck);
@@ -1669,7 +1712,7 @@ wgt.$f().main.setTitle("foo");
 			//Alertinative is to introduce another isVisibleXxx but not worth
 				if (!zk(wgt.$n()).isVisible(opts.strict))
 					return _markCache(cache, visited, false);
-			} else if (!wgt._visible)
+			} else if (!wgt._visible) // TODO: wgt._visible is not accurate, if tabpanel is not selected, we should fix in ZK 7.(B65-ZK-1076)
 				return _markCache(cache, visited, false);
 
 			//check if it is hidden by parent, such as child of hbox/vbox or border-layout
@@ -1705,7 +1748,7 @@ wgt.$f().main.setTitle("foo");
 		if (!strict || !visible)
 			return visible;
 		var n = this.$n();
-		return !n || zk(n).isVisible();
+		return n && zk(n).isVisible(); //ZK-1692: widget may not bind or render yet
 	},
 	/** Sets whether this widget is visible.
 	 * <h3>Subclass Notes</h3>
@@ -1872,6 +1915,13 @@ wgt.$f().main.setTitle("foo");
 	 * @param zk.Widget child the child whose visiblity is changed
 	 */
 	onChildVisible_: function () {
+	},
+	/** A callback called after a child has been delay rendered.
+	 * @param zk.Widget child the child being rendered
+	 * @see #deferRedraw_
+	 * @since 6.5.1
+	 */
+	onChildRenderDefer_: function (/*child*/) {
 	},
 	/** Makes this widget as topmost.
 	 * <p>If this widget is not floating, this method will look for its ancestors for the first ancestor who is floating. In other words, this method makes the floating containing this widget as topmost.
@@ -2077,7 +2127,7 @@ out.push('</div>');
 			if ((f = this.$class.molds) && (f = f[this._mold]))
 				return f.apply(this, arguments);
 
-			zk.error("Mold "+mold+" not found in "+this.className);
+			zk.error("Mold "+this._mold+" not found in "+this.className);
 		}
 	},
 	/* Utilities for handling the so-called render defer ({@link #setRenderdefer}).
@@ -2405,17 +2455,7 @@ function () {
 	 * @return String the HTML fragment
 	 */
 	redrawHTML_: function (skipper, trim) {
-		var out = zk.chrome ? new (function() {
-				var result = "";
-				this.push = function () {
-					for (var i = 0, j = arguments.length; i<j;i++)
-						if (arguments[i]) //skip null or undefined arguments
-							result += arguments[i];
-				};
-				this.join = function () {
-					return result;
-				};
-			}) : [];
+		var out = []; // Due to the side-effect of B65-ZK-1628, we remove the optimization of the array's join() for chrome.
 		this.redraw(out, skipper);
 		out = out.join('');
 		return trim ? out.trim(): out;
@@ -2718,7 +2758,7 @@ function () {
 	bind: function (desktop, skipper) {
 		this._binding = true;
 
-		_rerenderDone(this); //cancel pending async rerender
+		_rerenderDone(this, skipper); //cancel pending async rerender
 		if (this.z_rod) 
 			_bindrod(this);
 		else {
@@ -2747,7 +2787,7 @@ function () {
 	 * @return zk.Widget this widget
 	 */
 	unbind: function (skipper) {
-		_rerenderDone(this); //cancel pending async rerender
+		_rerenderDone(this, skipper); //cancel pending async rerender
 		if (this.z_rod)
 			_unbindrod(this);
 		else {
@@ -2801,19 +2841,23 @@ bind_: function (desktop, skipper, after) {
 			_listenFlex(this);
 
 		this.bindChildren_(desktop, skipper, after);
+		var self = this;
 		if (this.isListen('onBind')) {
-			var self = this;
 			zk.afterMount(function () {
 				if (self.desktop) //might be unbound
 					self.fire('onBind');
 			});
 		}
-		var self = this;
+		
+		if (this.isListen('onAfterSize')) //Feature ZK-1672
+			zWatch.listen({onSize: this});
+		
 		if (zk.mobile) {
 			after.push(function (){
 				setTimeout(function () {// lazy init
 					self.bindSwipe_();
-					self.bindDoubleTap_();			
+					self.bindDoubleTap_();
+					self.bindTapHold_();
 				}, 300);
 			});
 		}
@@ -2870,7 +2914,11 @@ unbind_: function (skipper, after) {
 		this.cleanDrag_(); //ok to invoke even if not init
 		this.unbindSwipe_();
 		this.unbindDoubleTap_();
-
+		this.unbindTapHold_();
+		
+		if (this.isListen('onAfterSize')) //Feature ZK-1672
+			zWatch.unlisten({onSize: this});
+		
 		if (this.isListen('onUnbind')) {
 			var self = this;
 			zk.afterMount(function () {
@@ -2898,7 +2946,12 @@ unbind_: function (skipper, after) {
 			// check child's desktop for bug 3035079: Dom elem isn't exist when parent do appendChild and rerender
 			if (!skipper || !skipper.skipped(this, child))
 				if (child.z_rod) _unbindrod(child);
-				else if (child.desktop) child.unbind_(null, after); //don't pass skipper
+				else if (child.desktop) {
+					child.unbind_(null, after); //don't pass skipper
+					//Bug ZK-1596: native will be transfer to stub in EE, store the widget for used in mount.js
+					if (child.$instanceof(zk.Native))
+						zAu._storeStub(child);
+				}
 		}
 	},
 
@@ -3012,7 +3065,12 @@ unbind_: function (skipper, after) {
 	// to overridden this method have to fix the IE9 issue (ZK-483)
 	// you can just add 1 px more for the offsetWidth
 	getChildMinSize_: function (attr, wgt) { //'w' for width or 'h' for height
-		return attr == 'h' ? zk(wgt).offsetHeight() : zjq.minWidth(wgt); //See also bug ZK-483
+		// feature #ZK-314: zjq.minWidth function return extra 1px in IE9/10
+		var wd = zjq.minWidth(wgt);
+		if(zk.ie > 8 && zk.isLoaded('zul.wgt') && wgt.$instanceof(zul.wgt.Image)) {
+			wd = zk(wgt).offsetWidth();
+		}
+		return attr == 'h' ? zk(wgt).offsetHeight() : wd; //See also bug ZK-483
 	},
 	getParentSize_: zk.ie6_ ? function (p) {
 		var zkp = zk(p),
@@ -3035,6 +3093,44 @@ unbind_: function (skipper, after) {
 	getMarginSize_: function (attr) { //'w' for width or 'h' for height
 		return zk(this).sumStyles(attr == 'h' ? 'tb' : 'lr', jq.margins);
 	},
+	getContentEdgeHeight_: function () {
+		var p = this.$n(),
+			fc = this.firstChild,
+			fc = fc && zk.isLoaded('zul.wgt') && fc.$instanceof(zul.wgt.Caption) ? fc.nextSibling : fc, //Bug ZK-1524: Caption should ignored
+			c = fc ? fc.$n() : p.firstChild,
+			zkp = zk(p),
+			h = zkp.padBorderHeight();
+		
+		if (c) {
+			c = c.parentNode;
+			while (c && c.nodeType == 1 && p != c) {
+				var zkc = zk(c);
+				h += zkc.padBorderHeight() + zkc.sumStyles("tb", jq.margins);
+				c = c.parentNode;
+			}
+			return h;
+		}
+		return 0;
+	},
+	getContentEdgeWidth_: function () {
+		var p = this.$n(),
+			fc = this.firstChild,
+			fc = fc && zk.isLoaded('zul.wgt') && fc.$instanceof(zul.wgt.Caption) ? fc.nextSibling : fc, //Bug ZK-1524: Caption should ignored
+			c = fc ? fc.$n() : p.firstChild,
+			zkp = zk(p),
+			w = zkp.padBorderWidth();
+		
+		if (c) {
+			c = c.parentNode;
+			while (c && c.nodeType == 1 && p != c) {
+				var zkc = zk(c);
+				w += zkc.padBorderWidth() + zkc.sumStyles("lr", jq.margins);
+				c = c.parentNode;
+			}
+			return w;
+		}
+		return 0;
+	},
 	fixFlex_: function() {
 		zFlex.fixFlex(this);
 	},
@@ -3046,7 +3142,10 @@ unbind_: function (skipper, after) {
 		delete this._vflexsz;
 	},
 	resetSize_: function(orient) {
-		(this.$n()).style[orient == 'w' ? 'width': 'height'] = '';
+		var n = this.$n();
+		if (n.scrollTop || n.scrollLeft) // keep the scroll status, the issue also happens (not only IE8) if trigger by resize browser window.
+			return;// do nothing Bug ZK-1885: scrollable div (with vflex) and tooltip
+		n.style[orient == 'w' ? 'width': 'height'] = '';
 	},
 	/** Initializes the widget to make it draggable.
 	 * It is called if {@link #getDraggable} is set (and bound).
@@ -3057,10 +3156,12 @@ unbind_: function (skipper, after) {
 	 */
 	initDrag_: function () {
 		var n = this.getDragNode();
-		this._drag = new zk.Draggable(this, n, this.getDragOptions_(_dragoptions));
-		// B50-3306835.zul
-		if (zk.ie9 && jq.nodeName(n, "img"))
-			jq(n).bind('mousedown', zk.$void);
+		if (n) { //ZK-1686: should check if DragNode exist
+			this._drag = new zk.Draggable(this, n, this.getDragOptions_(_dragoptions));
+			// B50-3306835.zul
+			if (zk.ie9 && jq.nodeName(n, "img"))
+				jq(n).bind('mousedown', zk.$void);
+		}
 	},
 	/** Cleans up the widget to make it un-draggable. It is called if {@link #getDraggable}
 	 * is cleaned (or unbound).
@@ -3187,6 +3288,27 @@ unbind_: function (skipper, after) {
 
 		jq(this.getDragNode()).removeClass('z-dragged');
 	},
+	
+	//Feature ZK-1672: provide empty onSize function if the widget is listened to onAfterSize 
+	//	but the widget is never listened to onSize event
+	onSize: function() {},
+	/**
+	 * Called to fire the onAfterSize event.
+	 * @since 6.5.2
+	 */
+	onAfterSize: function () {
+		if (this.desktop && this.isListen('onAfterSize')) {
+			var n = this.getCaveNode(),
+				width = n.offsetWidth,
+				height = n.offsetHeight;
+			if (this._preWidth != width || this._preHeight != height) {
+				this._preWidth = width;
+				this._preHeight = height;
+				this.fire('onAfterSize', {width: width, height: height});
+			}
+		}
+	},
+	
 	/** Bind swipe event to the widget on tablet device.
 	 * It is called if HTML 5 data attribute (data-swipeable) is set to true.
 	 * <p>You rarely need to override this method, unless you want to bind swipe behavior differently.
@@ -3194,90 +3316,42 @@ unbind_: function (skipper, after) {
 	 * @see #doSwipe_
 	 * @since 6.5.0
 	 */
-	bindSwipe_: zk.mobile ? function () {
-		var node = this.$n();
-		if (this.isListen('onSwipe') || jq(node).data('swipeable'))
-			this._swipe = new zk.Swipe(this, node);
-	} : zk.$void,
+	bindSwipe_: zk.$void,
 	/** Unbind swipe event to the widget on tablet device.
 	 * It is called if swipe event is unbound.
 	 * <p>You rarely need to override this method, unless you want to unbind swipe event differently.
 	 * @see #doSwipe_
 	 * @since 6.5.0
 	 */
-	unbindSwipe_: zk.mobile ? function () {
-		var swipe = this._swipe;
-		if (swipe) {
-			this._swipe = null;
-			swipe.destroy(this.$n());
-		}
-	} : zk.$void,
+	unbindSwipe_: zk.$void,
 	/** Bind double click event to the widget on tablet device.
 	 * It is called if the widget is listen to onDoubleClick event.
 	 * <p>You rarely need to override this method, unless you want to implement double click behavior differently.
 	 * @see #doDoubleClick_
 	 * @since 6.5.0
 	 */
-	bindDoubleTap_: zk.mobile ? function () {
-		if (this.isListen('onDoubleClick')) {
-			var doubleClickTime = 500;
-			this._startTap = function (wgt) {
-				wgt._lastTap = wgt.$n();  //Holds last tapped element (so we can compare for double tap)
-				wgt._tapValid = true;     //Are we still in the .5 second window where a double tap can occur
-				wgt._tapTimeout = setTimeout(function() {
-					wgt._tapValid = false;
-				}, doubleClickTime);
-			};
-			jq(this.$n()).bind('touchstart', this.proxy(this._dblTapStart))
-				.bind('touchend', this.proxy(this._dblTapEnd));
-		}
-	} : zk.$void,
+	bindDoubleTap_: zk.$void,
 	/** Unbind double click event to the widget on tablet device.
 	 * It is called if the widget is listen to onDoubleClick event.
 	 * <p>You rarely need to override this method, unless you want to implement double click behavior differently.
 	 * @see #doDoubleClick_
 	 * @since 6.5.0
 	 */
-	unbindDoubleTap_: zk.mobile ? function () {
-		if (this.isListen('onDoubleClick')) {
-			this._startTap = null;
-			jq(this.$n()).unbind('touchstart', this.proxy(this._dblTapStart))
-				.unbind('touchend', this.proxy(this._dblTapEnd));
-		}
-	} : zk.$void,
-	_dblTapStart: zk.mobile ? function(evt) {
-		var tevt = evt.originalEvent;
-		if (tevt.touches.length > 1) return;
-		var	changedTouch = tevt.changedTouches[0];
-		if (!this._tapValid) {
-			this._startTap(this);
-		} else {
-			clearTimeout(this._tapTimeout);
-			this._tapTimeout = null;
-			if (this.$n() == this._lastTap) {
-				this._dbTap = true;
-			} else {
-				this._startTap(this);
-			}
-		}
-		tevt.stopPropagation();
-	} : zk.$void,
-	_dblTapEnd: zk.mobile ? function(evt) {
-		var tevt = evt.originalEvent;
-		if (tevt.touches.length > 1) return;
-		if (this._dbTap) {
-			this._dbTap = this._tapValid = this._lastTap = null;
-			var wevt = new zk.Event(this, 'onDoubleClick', {pageX: tevt.pageX, pageY: tevt.pageY}, {}, evt);
-			if (!this.$weave) {
-				if (!wevt.stopped) {
-					this['doDoubleClick_'].call(this, wevt);
-				}
-				if (wevt.domStopped)
-					wevt.domEvent.stop();
-			}
-			tevt.preventDefault(); //stop ios zoom
-		}
-	} : zk.$void,
+	unbindDoubleTap_: zk.$void,
+	/** Bind right click event to the widget on tablet device.
+	 * It is called if the widget is listen to onRightClick event.
+	 * <p>You rarely need to override this method, unless you want to implement right click behavior differently.
+	 * @see #doRightClick_
+	 * @since 6.5.1
+	 */
+	bindTapHold_: zk.$void,
+	/** Unbind right click event to the widget on tablet device.
+	 * It is called if the widget is listen to onRightClick event.
+	 * <p>You rarely need to override this method, unless you want to implement right click behavior differently.
+	 * @see #doRightClick_
+	 * @since 6.5.1
+	 */
+	unbindTapHold_: zk.$void,
 	/** Sets the focus to this widget.
 	 * This method will check if this widget can be activated by invoking {@link #canActivate} first.
 	 * <p>Notice: don't override this method. Rather, override {@link #focus_},
@@ -4917,8 +4991,8 @@ zk.Native = zk.$extends(zk.Widget, {
 					s = s.substring(0, j) + ' id="' + this.uuid + '"' + s.substring(j); 
 				}
 			}
-
-			out.push(s);
+			// B65-ZK-1836
+			out.push(s.replace(/<\/(?=script>)/ig, '<\\/'));
 			if (this.value && s.startsWith("<textarea"))
 				out.push(this.value);
 		}
@@ -5114,6 +5188,7 @@ function zkopt(opts) {
 		switch (nm) {
 		case "pd": zk.procDelay = val; break;
 		case "td": zk.tipDelay =  val; break;
+		case "art": zk.resendTimeout = val; break;
 		case "dj": zk.debugJS = val; break;
 		case "kd": zk.keepDesktop = val; break;
 		case "pf": zk.pfmeter = val; break;

@@ -21,7 +21,6 @@ import org.zkoss.bind.Form;
 import org.zkoss.bind.FormExt;
 import org.zkoss.bind.impl.BinderImpl;
 import org.zkoss.bind.impl.LoadFormBindingImpl;
-import org.zkoss.bind.impl.MiscUtil;
 import org.zkoss.bind.impl.Path;
 import org.zkoss.bind.sys.BinderCtrl;
 import org.zkoss.bind.sys.Binding;
@@ -46,7 +45,6 @@ import org.zkoss.zk.ui.Component;
  * @since 6.0.0
  */
 public class BindELResolver extends XelELResolver {
-	private static final String VALIDATION_MESSAGES_RESOLVER_CLASS_PROP = "org.zkoss.bind.ValidationMessagesELResolver.class";
 	private final CompositeELResolver _resolver;
 	
 	public BindELResolver(XelContext ctx) {
@@ -56,15 +54,11 @@ public class BindELResolver extends XelELResolver {
 		_resolver.add(new FormELResolver());
 		_resolver.add(new ListModelELResolver());
 		_resolver.add(new TreeModelELResolver());
-		_resolver.add(newValidationMessagesELResolver());
+		_resolver.add(new ValidationMessagesELResolver());
 		_resolver.add(new ImplicitObjectELResolver());//ZK-1032 Able to wire Event to command method
+		_resolver.add(new DynamicPropertiedELResolver());//ZK-1472 Bind Include Arg
 		
 		_resolver.add(super.getELResolver());
-	}
-	private ELResolver newValidationMessagesELResolver() {
-		ELResolver resolver = MiscUtil.newInstanceFromProperty(VALIDATION_MESSAGES_RESOLVER_CLASS_PROP,
-				ValidationMessagesELResolver.class.getName(), ELResolver.class);
-		return resolver;
 	}
 	protected ELResolver getELResolver() {
 		return _resolver;
@@ -138,7 +132,7 @@ public class BindELResolver extends XelELResolver {
 	}
 
 	//update dependency and notify changed
-	private void tieValue(ELContext elCtx, Object base, Object propName, Object value, boolean allownotify) {
+	private void tieValue(ELContext elCtx, Object base, Object property, Object value, boolean allownotify) {
 		final BindELContext ctx = (BindELContext)((EvaluationContext)elCtx).getELContext();
 		if(ctx.ignoreTracker()) return; 
 		final Binding binding = ctx.getBinding();
@@ -148,7 +142,8 @@ public class BindELResolver extends XelELResolver {
         	final Path path = getPathList(ctx);
         	
         	String script = null;
-        	
+        	//ZK-1960 save binding to an array throws ClassCastException
+        	String propName = property==null?null:property.toString();
         	boolean isForm = base instanceof Form;
         	//ZK-1189, form shouldn't count on property directly
         	String formFieldName = null;
@@ -183,7 +178,7 @@ public class BindELResolver extends XelELResolver {
 								
 								//notify indirect form properties that have same expression, 
 								//ex: bean[a.b.c] of fx, whose expression is 'bean[a.b.c]'
-								BindELContext.addNotifys(base, (String) script, value, bctx); 
+								BindELContext.addNotifys(base, script, value, bctx); 
 								//notify form property whose value equals expression result, 
 								//ex, bean[a.b.c] of fx, if a.b.c is 'prop', them it notify bean.prop of fx 
 								if(!script.equals(formFieldName)){

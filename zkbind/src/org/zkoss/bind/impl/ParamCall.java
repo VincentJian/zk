@@ -28,6 +28,8 @@ import org.zkoss.bind.annotation.HeaderParam;
 import org.zkoss.bind.annotation.QueryParam;
 import org.zkoss.bind.annotation.Scope;
 import org.zkoss.bind.annotation.ScopeParam;
+import org.zkoss.bind.sys.BindEvaluatorX;
+import org.zkoss.bind.sys.ReferenceBinding;
 import org.zkoss.lang.Classes;
 import org.zkoss.util.logging.Log;
 import org.zkoss.zk.ui.Component;
@@ -67,7 +69,7 @@ public class ParamCall {
 		_types = new ArrayList<Type>();
 		_mappingType = mappingType;
 		_paramResolvers.put(ContextParam.class, new ParamResolver<Annotation>() {
-			@Override
+			
 			public Object resolveParameter(Annotation anno,Class<?> returnType) {
 				Object val = _contextObjects.get(((ContextParam) anno).value()); 
 				return val==null?null:Classes.coerce(returnType, val);
@@ -87,7 +89,7 @@ public class ParamCall {
 	
 	public void setBindingArgs(final Map<String, Object> bindingArgs){
 		_paramResolvers.put(BindingParam.class, new ParamResolver<Annotation>() {
-			@Override
+			
 			public Object resolveParameter(Annotation anno,Class<?> returnType) {
 				Object val = bindingArgs.get(((BindingParam) anno).value()); 
 				return val==null?null:Classes.coerce(returnType, val);
@@ -175,30 +177,39 @@ public class ParamCall {
 		_component = comp;
 		//scope param
 		_paramResolvers.put(ScopeParam.class, new ParamResolver<Annotation>() {
-			@Override
+			
 			public Object resolveParameter(Annotation anno,Class<?> returnType) {
 				final String name = ((ScopeParam)anno).value();
 				final Scope[] ss = ((ScopeParam)anno).scopes();
+				
+				Object val = null;
 				
 				for(Scope s:ss){
 					switch(s){
 					case AUTO:
 						if(ss.length==1){
-							return _component.getAttribute(name,true);
+							val = _component.getAttribute(name,true);
+						}else{
+							throw new UiException("don't use "+s+" with other scopes "+Arrays.toString(ss));
 						}
-						throw new UiException("don't use "+s+" with other scopes "+Arrays.toString(ss));
 					}
 				}
-				Object val = null;
-				for(Scope scope:ss){
-					final String scopeName = scope.getName();
-					Object scopeObj = Components.getImplicit(_component, scopeName);
-					if(scopeObj instanceof Map){
-						val = ((Map<?,?>)scopeObj).get(name);
-						if(val!=null) break;
-					}else if(scopeObj !=null){
-						_log.error("the scope of "+scopeName+" is not a Map, is "+scopeObj);
+				if(val==null){
+					for(Scope scope:ss){
+						final String scopeName = scope.getName();
+						Object scopeObj = Components.getImplicit(_component, scopeName);
+						if(scopeObj instanceof Map){
+							val = ((Map<?,?>)scopeObj).get(name);
+							if(val!=null) break;
+						}else if(scopeObj !=null){
+							_log.error("the scope of "+scopeName+" is not a Map, is "+scopeObj);
+						}
 					}
+				}
+				
+				//zk-1469, 
+				if(val instanceof ReferenceBinding){
+					val = resolveReferenceBinding(name,(ReferenceBinding)val,returnType);
 				}
 				return val==null?null:Classes.coerce(returnType, val);
 			}
@@ -206,7 +217,7 @@ public class ParamCall {
 		
 		//component
 		_paramResolvers.put(SelectorParam.class, new ParamResolver<Annotation>() {
-			@Override
+			
 			public Object resolveParameter(Annotation anno,Class<?> returnType) {
 				final String selector = ((SelectorParam) anno).value();
 				final List<Component> result = Selectors.find(_root, selector);
@@ -220,25 +231,36 @@ public class ParamCall {
 			}
 		});
 	}
+	
+	private Object resolveReferenceBinding(String name, ReferenceBinding rbinding,Class<?> returnType){
+		BindEvaluatorX evalx = rbinding.getBinder().getEvaluatorX();
+		//resolve by name or by rbinding.propertyString directly?
+		Object val = BindEvaluatorXUtil.eval(evalx, rbinding.getComponent(), name, returnType, null);
+		//following is quick but not safe because of the null arg
+//		val = ((ReferenceBinding)val).getValue(null);
+		
+		return val;
+	}
+	
 	public void setExecution(Execution exec) {
 		_execution = exec;
 		//http param
 		_paramResolvers.put(QueryParam.class, new ParamResolver<Annotation>() {
-			@Override
+			
 			public Object resolveParameter(Annotation anno,Class<?> returnType) {
 				Object val = _execution.getParameter(((QueryParam) anno).value());
 				return val==null?null:Classes.coerce(returnType, val);
 			}
 		});
 		_paramResolvers.put(HeaderParam.class, new ParamResolver<Annotation>() {
-			@Override
+			
 			public Object resolveParameter(Annotation anno,Class<?> returnType) {
 				Object val = _execution.getHeader(((HeaderParam) anno).value());
 				return val==null?null:Classes.coerce(returnType, val);
 			}
 		});
 		_paramResolvers.put(CookieParam.class, new ParamResolver<Annotation>() {
-			@Override
+			
 			@SuppressWarnings("unchecked")
 			public Object resolveParameter(Annotation anno,Class<?> returnType) {
 				Map<String,Object> m = (Map<String,Object>)_execution.getAttribute(COOKIE_CACHE);
@@ -251,21 +273,21 @@ public class ParamCall {
 						final Cookie[] cks = ((HttpServletRequest)req).getCookies();
 						if(cks != null){
 							for(Cookie ck:cks){
-								m.put(ck.getName().toLowerCase(), ck.getValue());
+								m.put(ck.getName().toLowerCase(java.util.Locale.ENGLISH), ck.getValue());
 							}
 						}
 					}else/* if(req instanceof PortletRequest)*/{
 						//no cookie in protlet 1.0
 					}
 				}
-				Object val = m==null?null:m.get(((CookieParam) anno).value().toLowerCase());
+				Object val = m==null?null:m.get(((CookieParam) anno).value().toLowerCase(java.util.Locale.ENGLISH));
 				return val==null?null:Classes.coerce(returnType, val);
 			}
 		});
 
 		//execution
 		_paramResolvers.put(ExecutionParam.class, new ParamResolver<Annotation>() {
-			@Override
+			
 			public Object resolveParameter(Annotation anno,Class<?> returnType) {
 				Object val = _execution.getAttribute(((ExecutionParam) anno).value());
 				return val==null?null:Classes.coerce(returnType, val);
@@ -273,7 +295,7 @@ public class ParamCall {
 		});
 		
 		_paramResolvers.put(ExecutionArgParam.class, new ParamResolver<Annotation>() {
-			@Override
+			
 			public Object resolveParameter(Annotation anno,Class<?> returnType) {
 				Object val = _execution.getArg().get(((ExecutionArgParam) anno).value());
 				return val==null?null:Classes.coerce(returnType, val);

@@ -293,7 +293,7 @@ String scroll; //DOM Element's ID</code></pre>
 	//opts: null,
 	/** Constructor.
 	 * @param Object control the control object for this draggable.
-	 * I can be anything, but it is usually a widget ({@link zk.Widget}).
+	 * It can be anything, but it is usually a widget ({@link zk.Widget}).
 	 * @param DOMElement node [optional] the DOM element that is made to be draggable.
 	 * If omitted and control is a widget, {@link zk.Widget#$n} is assumed.
 	 * @param Map opts [optional] options. Refer to {@link #opts} for allowed options.
@@ -611,15 +611,17 @@ String scroll; //DOM Element's ID</code></pre>
 
 		this.offset = ofs;
 		_activate(this, devt, pt);
-
-		if (!zk.ie && !zk.mobile) {
-			if (!zk.Draggable.ignoreStop(target))
+		
+		if ((!zk.ie || zk.ie9) && !zk.mobile) {
+			if (!zk.Draggable.ignoreStop(target)) // Bug B65-ZK-1839 we should ignore select tag on IE9
 				devt.stop();
 			//IE6: if stop*, onclick won't be fired (unable to select) (test/dragdrop.zul)
 			//FF3: if not stop, IMG cannot be dragged (test/dragdrop.zul) and INPUT not droppable (Bug 3031511)
 			//Opera: if not stop, 'easy' to become selecting text
 			//Chrome (Bug 3074253): unable to select the nested draggable element
 			//Mobile: if stop: onclick won't be fired (Bug ZK-1305)
+			//IE9: if not stop, the IMG cannot be dragged, (Bug ZK-1612)
+			//     and double check with a previous bug which removes the zk.ie9 condition (B50-3306835)
 			//
 			//Bug 3008328: input: if preventDefault(), not editable (both FF and Opera) => solution: stop()
 
@@ -806,7 +808,10 @@ String scroll; //DOM Element's ID</code></pre>
 	},
 	ignoreStop: function (target) { //called by mount
 		//Bug 3310017/3309975: if trigger focus() FF and chrome cannot handle input cursor.
-		return zk(target).isInput();
+		return zk(target).isInput()
+				// B65-ZK-1839 ignore select tag for IE9
+				|| (zk.ie9 && jq.nodeName(target, 'select'))
+				|| jq.nodeName(target, 'option'); // B65-ZK-1946: ignore option tag 
 	}
 });
 })();

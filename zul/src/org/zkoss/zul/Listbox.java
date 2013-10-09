@@ -91,7 +91,7 @@ import org.zkoss.zul.impl.XulElement;
  * </p>
  *
  * <p>
- * Besides creating {@link Listitem} programmingly, you could assign a data
+ * Besides creating {@link Listitem} programmatically, you could assign a data
  * model (a {@link ListModel} or {@link GroupsModel} instance) to a listbox via
  * {@link #setModel(ListModel)} or {@link #setModel(GroupsModel)} and then the
  * listbox will retrieve data via {@link ListModel#getElementAt} when necessary.
@@ -398,6 +398,13 @@ public class Listbox extends MeshElement {
 			public void clear() {
 				final boolean oldFlag = setReplacingItem(true);
 				try {
+					//Bug ZK-1834: if there are selected items, clear first.
+					if (getSelectedCount() > 0) {
+						clearSelection();
+						
+						// Bug ZK-1842 Listbox scroll bug listheader sort 
+						_anchorLeft = _anchorTop = 0;
+					}
 					super.clear();
 				} finally {
 					setReplacingItem(oldFlag);
@@ -587,7 +594,7 @@ public class Listbox extends MeshElement {
 
 	/**
 	 * Returns whether to grow and shrink vertical to fit their given space, so
-	 * called vertial flexibility.
+	 * called vertical flexibility.
 	 *
 	 * <p>
 	 * Note: this attribute is ignored if {@link #setRows} is specified
@@ -608,7 +615,7 @@ public class Listbox extends MeshElement {
 
 	/**
 	 * Sets whether to grow and shrink vertical to fit their given space, so
-	 * called vertial flexibility.
+	 * called vertical flexibility.
 	 *
 	 * <p>
 	 * Note: this attribute is ignored if {@link #setRows} is specified
@@ -905,12 +912,16 @@ public class Listbox extends MeshElement {
 					final int offset = _jsel - _jsel % getPageSize();
 					final int limit = getPageSize();
 					getDataLoader().syncModel(offset, limit); // force reloading
+					if (_jsel != jsel) //Bug ZK-1537: _jsel changed after syncModel if model is never synchronized
+						_jsel = jsel;
 				} else {
 					smartUpdate("selInView_", _jsel);
 				}
 			} else {
-				item.setSelectedDirectly(true);
-				_selItems.add(item);
+				if (!item.isDisabled()) { // Bug ZK-1715: not select item if disabled.
+					item.setSelectedDirectly(true);
+					_selItems.add(item);
+				}
 			}
 
 			if (inSelectMold()) {
@@ -979,8 +990,10 @@ public class Listbox extends MeshElement {
 					} else if (item != null)
 						smartUpdate("selectedItem", item);
 				}
-				item.setSelectedDirectly(true);
-				_selItems.add(item);
+				if (!item.isDisabled()) { // Bug ZK-1715: not select item if disabled.
+					item.setSelectedDirectly(true);
+					_selItems.add(item);
+				}
 				if (inSelectMold()) {
 					item.smartUpdate("selected", true);
 				} else {
@@ -1172,7 +1185,7 @@ public class Listbox extends MeshElement {
 	 *
 	 * <p>
 	 * If mold is "paging", this method never returns null, because a child
-	 * paging controller is created automcatically (if not specified by
+	 * paging controller is created automatically (if not specified by
 	 * developers with {@link #setPaginal}).
 	 *
 	 * <p>
@@ -1243,11 +1256,13 @@ public class Listbox extends MeshElement {
 	private class PGListener implements SerializableEventListener<PagingEvent>,
 			CloneableEventListener<PagingEvent> {
 		public void onEvent(PagingEvent event) {
+			//Bug ZK-1622: reset anchor position after changing page
+			_anchorTop = 0;
+			_anchorLeft = 0;
 			Events.postEvent(new PagingEvent(event.getName(),
 				Listbox.this, event.getPageable(), event.getActivePage()));
 		}
-
-		@Override
+		
 		public Object willClone(Component comp) {
 			return null; // skip to clone
 		}
@@ -1266,8 +1281,7 @@ public class Listbox extends MeshElement {
 			}
 			invalidate();
 		}
-
-		@Override
+		
 		public Object willClone(Component comp) {
 			return null; // skip to clone
 		}
@@ -1614,11 +1628,13 @@ public class Listbox extends MeshElement {
 					if (_jsel < 0) {
 						_jsel = newIndex;
 						_selItems.add(newItem);
+						smartUpdateSelection();
 					} else if (_multiple) {
 						if (_jsel > newIndex) {
 							_jsel = newIndex;
 						}
 						_selItems.add(newItem);
+						smartUpdateSelection();
 					} else { // deselect
 						newItem.setSelectedDirectly(false);
 					}
@@ -1760,6 +1776,8 @@ public class Listbox extends MeshElement {
 				if (_jsel == index) {
 					fixSelectedIndex(index);
 				}
+
+				smartUpdateSelection();
 			} else {
 				if (!isLoadingModel() && _jsel >= index) {
 					--_jsel;
@@ -2240,13 +2258,13 @@ public class Listbox extends MeshElement {
 			if (_model != model) {
 				if (_model != null) {
 					_model.removeListDataListener(_dataListener);
+					/* Bug ZK-1512: should clear listitem anyway
 					if (_model instanceof GroupsListModel)
-						getItems().clear();
+						getItems().clear();*/
 
 					resetDataLoader(); // Bug 3357641
-				} else {
-					getItems().clear(); // Bug 1807414
 				}
+				getItems().clear(); // Bug 1807414, ZK-1512
 				
 				if (!inSelectMold()) {
 					smartUpdate("model", model instanceof GroupsListModel || model instanceof GroupsModel ? "group" : true);
@@ -2543,7 +2561,7 @@ public class Listbox extends MeshElement {
 			// when the event is fired from it, i.e. No need to sync the sorting
 			// status here.
 			if (event.getType() == ListDataEvent.STRUCTURE_CHANGED
-					&& _model instanceof Sortable) {
+					&& _model instanceof Sortable && _listhead != null) { //ZK-1705 added null check for _listhead
 				Sortable<Object> smodel = cast(_model);
 				List<Listheader> headers = cast(_listhead.getChildren());
 				boolean found = false;
@@ -2979,6 +2997,10 @@ public class Listbox extends MeshElement {
 					} else {
 						resetDataLoader(); // enforce recreate the dataloader
 						// dataloader
+
+						// Bug ZK-1895
+						//The attribute shall be removed, otherwise DataLoader will not syncModel when setModel
+						Executions.getCurrent().removeAttribute("zkoss.Listbox.deferInitModel_"+getUuid());
 					}
 				}
 			} else if (_model != null){ //items in model not init yet
@@ -2999,7 +3021,7 @@ public class Listbox extends MeshElement {
 			setModel(_model); //init the model
 		}
 
-		@Override
+		
 		public Object willClone(Component comp) {
 			return null; // skip to clone
 		}
@@ -3495,8 +3517,11 @@ public class Listbox extends MeshElement {
 			int to = shift > 0 ? index + shift : index;
 
 			//Update UI
-			final int toUI = Math.min(to, getItemCount() - 1); // capped by size
+			final int tsz = getItemCount();
+			final int toUI = Math.min(to, tsz - 1); // capped by size
 			if (!isMultiple() || shift == 0) {
+				if (index >= tsz)
+					index = tsz - 1;
 				setSelectedIndex(index);
 				setFocusIndex(offset < 0 ? pageSize - 1 : offset);
 			} else {

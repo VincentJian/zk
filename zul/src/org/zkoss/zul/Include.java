@@ -72,7 +72,7 @@ import org.zkoss.zul.mesg.MZul;
  * <ul>
  * <li>The instant mode is supported automatically if the include component
  * is created by a ZUML page.
- * If you want to create it programmingly, you have to invoke {@link #afterCompose}
+ * If you want to create it programmatically, you have to invoke {@link #afterCompose}
  * after assigning the source ({@link #setSrc}).</li>
  * <li>The instant mode doesn't support {@link #setProgressing} nor
  * {@link #setLocalized}</li>
@@ -280,7 +280,7 @@ implements Includer, DynamicPropertied, AfterCompose, IdSpace {
 			fixMode();
 			if (!_instantMode) invalidate();
 			else super.invalidate();
-				//invalidate is redudant in instant mode, but less memory leak in IE
+				//invalidate is redundant in instant mode, but less memory leak in IE
 		}
 	}
 	
@@ -346,6 +346,9 @@ implements Includer, DynamicPropertied, AfterCompose, IdSpace {
 		else if(_src == null && !getChildren().isEmpty())
 			// !getChildren().isEmpty() is for performance.
 			getChildren().clear();
+		else if (!_instantMode && "auto".equals(getMode()) && !getChildren().isEmpty())
+			//Bug ZK-1437: auto mode has no chance to clear the content if src is changed (_instantMode become false)
+			getChildren().clear();
 	}
 	
 	/** Returns whether the source depends on the current Locale.
@@ -369,7 +372,7 @@ implements Includer, DynamicPropertied, AfterCompose, IdSpace {
 				fixMode(); //becomes defer mode if auto
 			if (!_instantMode) invalidate();
 			else super.invalidate();
-				//invalidate is redudant in instant mode, but less memory leak in IE
+				//invalidate is redundant in instant mode, but less memory leak in IE
 		}
 	}
 
@@ -403,11 +406,10 @@ implements Includer, DynamicPropertied, AfterCompose, IdSpace {
 	}
 
 	//Includer//
-	//@Override
 	public Page getChildPage() {
 		return _childpg;
 	}
-	//@Override
+	
 	public void setChildPage(Page page) {
 		if (_childpg != null && page == null) {
 			final Desktop desktop = getDesktop();
@@ -416,12 +418,12 @@ implements Includer, DynamicPropertied, AfterCompose, IdSpace {
 		}
 		_childpg = page;
 	}
-	//@Override
+	
 	public void setRenderingResult(String result) {
 		_renderResult = result;
 	}
 
-	//@Override
+	
 	public void onPageAttached(Page newpage, Page oldpage) {
 		if (newpage != null)
 			Events.postEvent("onAfterCompose", this, null);
@@ -482,7 +484,7 @@ implements Includer, DynamicPropertied, AfterCompose, IdSpace {
 	 * via the request's attribute.
 	 *
 	 * <p>For example, if setDynamicProperty("abc", new Integer(4)) is called,
-	 * then the included page can retrived the abc property
+	 * then the included page can retrieved the abc property
 	 * by use of <code>${reqestScope.abc}</code>
 	 *
 	 * @since 3.0.4
@@ -507,7 +509,7 @@ implements Includer, DynamicPropertied, AfterCompose, IdSpace {
 	 */
 	public void invalidate() {
 		super.invalidate();
-			//invalidate is redudant in instant mode, but less memory leak in IE
+			//invalidate is redundant in instant mode, but less memory leak in IE
 		
 		// see the comment inside applyChangesToContent();
 		applyChangesToContent();
@@ -582,7 +584,9 @@ implements Includer, DynamicPropertied, AfterCompose, IdSpace {
 
 				renderer.render("_xcnt", incsb.toString());
 				if (_renderResult != null && _renderResult.length() > 0)
-					renderer.renderDirectly("_childjs", "function(){" + _renderResult + '}');
+					renderer.renderDirectly("_childjs", "function(){" +
+							// B65-ZK-1836
+							_renderResult.replaceAll("</(?i)(?=script>)", "<\\\\/") + '}');
 			}
 		} finally {
 			_renderResult = null;

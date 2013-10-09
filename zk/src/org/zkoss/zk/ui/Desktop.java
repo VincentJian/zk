@@ -16,13 +16,12 @@ Copyright (C) 2005 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.zk.ui;
 
-import java.util.Map;
 import java.util.Collection;
+import java.util.Map;
 
 import org.zkoss.util.media.Media;
-
-import org.zkoss.zk.ui.ext.Scope;
 import org.zkoss.zk.device.Device;
+import org.zkoss.zk.ui.ext.Scope;
 
 /**
  * Represents a desktop.
@@ -87,8 +86,8 @@ public interface Desktop extends Scope {
 	 * It is unique in the whole session.
 	 */
 	public String getId();
-	/** Returns the execution, or null if this desktop is not under
-	 * seving any execution (aka., not locked).
+	/** Returns the execution, or null if this desktop is not 
+	 * serving any execution (a.k.a., not locked).
 	 */
 	public Execution getExecution();
 	/** Returns the session of this desktop.

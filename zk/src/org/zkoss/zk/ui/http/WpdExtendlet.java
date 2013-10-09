@@ -85,7 +85,7 @@ public class WpdExtendlet extends AbstractExtendlet<Object> {
 		config.addCompressExtension("wpd");
 	}
 
-	//@Override
+	
 	public void service(HttpServletRequest request,
 	HttpServletResponse response, String path)
 	throws ServletException, IOException {
@@ -477,6 +477,8 @@ public class WpdExtendlet extends AbstractExtendlet<Object> {
 		if (v != 900) sb.append("pd:").append(v).append(',');
 		v = config.getTooltipDelay();
 		if (v != 800) sb.append("td:").append(v).append(',');
+		v = config.getAutoResendTimeout();
+		if (v != 200) sb.append("art:").append(v).append(',');
 		if (config.isTimerKeepAlive())
 			sb.append("ta:1,");
 		if (config.isDebugJS()) sb.append("dj:1,");

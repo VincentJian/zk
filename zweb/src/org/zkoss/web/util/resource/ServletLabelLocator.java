@@ -28,7 +28,7 @@ import org.zkoss.util.logging.Log;
 import org.zkoss.web.servlet.Servlets;
 
 /**
- * Used by Lables to load labels from a servlet context.
+ * Used by Labels to load labels from a servlet context.
  *
  * @author tomyeh
  */
@@ -85,7 +85,7 @@ public class ServletLabelLocator implements LabelLocator {
 		final String prefix = j >= 0 ? path.substring(0, j): path;
 		final String suffix = j >= 0 ? path.substring(j): "";
 		path = locale == null ? prefix + suffix: prefix + '_' + locale + suffix;
-		return path.toLowerCase().startsWith("file://") ?
+		return path.toLowerCase(java.util.Locale.ENGLISH).startsWith("file://") ?
 			Servlets.getResource(_ctx, path): _ctx.getResource(path);
 			//we don't accept http:// since we cannot detect if it exists
 	}

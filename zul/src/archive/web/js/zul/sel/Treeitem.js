@@ -59,6 +59,42 @@ it will be useful, but WITHOUT ANY WARRANTY.
 			}
 		}
 	}
+	//Bug ZK-1766
+	function _searchPrevRenderedItem(wgt) {
+		var target;
+		if (wgt) {
+			if (wgt.treerow) {
+				return wgt;
+			}
+			if (wgt.isContainer()) {
+				for (var c = wgt.treechildren.lastChild; c; c = c.previousSibling) {
+					target = _searchPrevRenderedItem(c);
+					if (target)
+						return target;
+				}
+			}
+			target = _searchPrevRenderedItem(wgt.previousSibling);
+		}
+		return target;
+	}
+	//Bug ZK-1766
+	function _searchNextRenderedItem(wgt) {
+		var target;
+		if (wgt) {
+			if (wgt.treerow) {
+				return wgt;
+			}
+			if (wgt.isContainer()) {
+				for (var c = wgt.treechildren.firstChild; c; c = c.nextSibling) {
+					target = _searchNextRenderedItem(c);
+					if (target)
+						return target;
+				}
+			}
+			target = _searchNextRenderedItem(wgt.nextSibling);
+		}
+		return target;
+	}
 	
 /**
  * A treeitem.
@@ -83,10 +119,15 @@ zul.sel.Treeitem = zk.$extends(zul.sel.ItemWidget, {
     	 */
 		open: function (open, fromServer) {
 			var img = this.$n('open');
-			if (!img || _closed(this.parent))
+			if (!img || _closed(this.parent)) {
+                if (img) {// B65-ZK-1609: Tree close/open icon is not correct after calling clearOpen and reopen a node
+                    var cn = img.className;
+                    img.className = open ? cn.replace('-close', '-open') : cn.replace('-open', '-close');
+                }
 				return;
-
-			var cn = img.className,
+			}
+            
+            var cn = img.className,
 				tree = this.getTree(),
 				ebodytbl = tree ? tree.ebodytbl: null,
 				oldwd = ebodytbl ? ebodytbl.clientWidth: 0; //ebodytbl shall not be null (just in case)
@@ -320,7 +361,7 @@ zul.sel.Treeitem = zk.$extends(zul.sel.ItemWidget, {
 		this.$supers('onChildRemoved_', arguments);
 		if (child == this.treerow) {
 			this.treerow = null;
-			_syncTreeBodyHeight(this);
+		//	_syncTreeBodyHeight(this); ZK-360: fixed; ZK-1735: dont need to sync
 		} else if (child == this.treechildren) {
 			this.treechildren = null;
 			if (!this.childReplacing_) //NOT called by onChildReplaced_
@@ -331,8 +372,11 @@ zul.sel.Treeitem = zk.$extends(zul.sel.ItemWidget, {
 		this.$supers('onChildAdded_', arguments);
 		if (this.childReplacing_) //called by onChildReplaced_
 			this._fixOnAdd(child, true);
-		if (this.desktop && child.$instanceof(zul.sel.Treerow))
-			_syncTreeBodyHeight(this);
+		else if (this.desktop)
+            this._fixOnAdd(child, true); // fixed dynamically change treerow. B65-ZK-1608
+		if (this.desktop && child.$instanceof(zul.sel.Treerow)) {
+		//	_syncTreeBodyHeight(this); ZK-360: fixed; ZK-1735: dont need to sync
+		}
 		//else was handled by insertBefore/appendChild
 	},
 	removeHTML_: function (n) {
@@ -356,22 +400,64 @@ zul.sel.Treeitem = zk.$extends(zul.sel.ItemWidget, {
 		}
 	},
 	_renderChildHTML: function (childHTML) {
-		var w = this.previousSibling;
-		for (;w; w = this.previousSibling)
-			if (w.treerow) break;
-		
-		if (w) {
-			jq(w.treerow.$n()).after(childHTML);
-		} else if (w = this.nextSibling) {
-			for (;w; w = this.nextSibling)
-				if (w.treerow) break;
-				
-			if (w)
-				jq(w.treerow.$n()).before(childHTML);
-		} else if (w = this.getParentItem()) {
-			w._renderChildHTML(childHTML);
+		var w, tarWgt;
+		//Bug ZK-1726: search correct siblings
+		if (w = this.previousSibling) {
+			tarWgt = _searchPrevRenderedItem(w); //Bug ZK-1766: search rendered item recursively
+			if (tarWgt) {
+				var dom = tarWgt.$n();
+				if (tarWgt.isContainer()) { //Bug ZK-1733: Check if treechildren is rendered yet
+					var lastChild = tarWgt.treechildren.lastChild;
+					for (;lastChild; lastChild = lastChild.previousSibling) {
+						var n = lastChild.$n();
+						if (n) { //Bug ZK-1739: treerow may removed
+							dom = n;
+							break;
+						}
+					}
+				}
+				jq(dom).after(childHTML);
+				return;
+			}
+		}
+		if (w = this.nextSibling) {
+			tarWgt = _searchNextRenderedItem(w); //Bug ZK-1766: search rendered item recursively
+			if (tarWgt) {
+				var dom = tarWgt.$n();
+				if (this.isContainer()) { //Bug ZK-1733: Check if treechildren is rendered yet
+					var firstChild = this.treechildren.firstChild;
+					for (;firstChild; firstChild = firstChild.nextSibling) {
+						var n = firstChild.$n();
+						if (n) { //Bug ZK-1739: treerow may removed
+							dom = n;
+							break;
+						}
+					}
+				}
+				jq(dom).before(childHTML);
+				return;
+			}
+		}
+		if (w = this.getParentItem()) {
+			// B65-ZK-1608 add new treerow after parent node.
+			var n = w.$n();
+			if (n)
+			    jq(n).after(childHTML);
+			else
+				w._renderChildHTML(childHTML);
 		} else if ((w = this.getTree())) {
-			jq(w.$n('rows')).append(childHTML);
+			var tbody = w.$n('rows');
+			if (this.isContainer()) { //Bug ZK-1733: Check if treechildren is rendered yet
+				var firstChild = this.treechildren.firstChild;
+				if (firstChild) {
+					var dom = firstChild.$n();
+					if (dom) { //Bug ZK-1739: treerow may removed
+						jq(dom).before(childHTML);
+						return;
+					}
+				}
+			}
+			jq(tbody).append(childHTML);
 		}
 	},
 	insertChildHTML_: function (child, before, desktop) {
@@ -379,7 +465,7 @@ zul.sel.Treeitem = zk.$extends(zul.sel.ItemWidget, {
 			jq(before).before(child.redrawHTML_());
 		else
 			this._renderChildHTML(child.redrawHTML_());
-				//treechild is a DOM sibling (so use after)
+		
 		child.bind(desktop);
 	},
 	getOldWidget_: function (n) {

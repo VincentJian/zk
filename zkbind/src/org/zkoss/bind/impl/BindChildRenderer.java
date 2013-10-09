@@ -11,9 +11,7 @@ Copyright (C) 2011 Potix Corporation. All Rights Reserved.
 */
 package org.zkoss.bind.impl;
 
-import org.zkoss.xel.VariableResolverX;
-import org.zkoss.xel.XelContext;
-import org.zkoss.xel.XelException;
+import org.zkoss.bind.sys.TemplateResolver;
 import org.zkoss.zk.ui.Component;
 import org.zkoss.zk.ui.event.Event;
 import org.zkoss.zk.ui.event.Events;
@@ -43,15 +41,15 @@ public class BindChildRenderer extends AbstractRenderer{
 		
 		final ForEachStatus iterStatus = new AbstractForEachStatus(){//provide iteration status in this context
 			private static final long serialVersionUID = 1L;
-			@Override
+			
 			public int getIndex() {
 				return index;
 			}
-			@Override
+			
 			public Object getEach(){
 				return data;
 			}
-			@Override
+			
 			public Integer getEnd(){
 				return size;
 			}
@@ -76,6 +74,7 @@ public class BindChildRenderer extends AbstractRenderer{
 		
 
 		boolean templateTracked = false;
+		
 		for(Component comp: items){
 			comp.setAttribute(BinderImpl.VAR, varnm);
 			addItemReference(owner, comp, index, varnm); //kept the reference to the data, before ON_BIND_INIT
@@ -83,6 +82,9 @@ public class BindChildRenderer extends AbstractRenderer{
 			
 			//add template dependency
 			if (!templateTracked) {
+				//ZK-1787 When the viewModel tell binder to reload a list, the other component that bind a bean in the list will reload again
+				//move TEMPLATE_OBJECT (was set in resoloveTemplate) to current for check in addTemplateTracking
+				comp.setAttribute(TemplateResolver.TEMPLATE_OBJECT, owner.removeAttribute(TemplateResolver.TEMPLATE_OBJECT));
 				addTemplateTracking(owner, comp, data, index, size);
 				templateTracked = true;
 			}
