@@ -44,6 +44,7 @@ Copyright (C) 2008 Potix Corporation. All Rights Reserved.
 zul.tab.Tabbox = zk.$extends(zul.Widget, {
 	_orient: 'top',
 	_tabscroll: true,
+	_maximalHeight: false,
 	/* ZK-1441
 	 * Reference: _sel() in Tab.js, Tabpanel.js
 	 */
@@ -85,6 +86,12 @@ zul.tab.Tabbox = zk.$extends(zul.Widget, {
 				this._orient = 'left';
 			this.rerender();
 		},
+		
+		/**
+		 * Sets whether to set the maximum height to every tabpanel in initial phase
+		 * @param maximalHeight
+		 */
+		maximalHeight: _zkf
 		/**
 		 * Returns the spacing between {@link Tabpanel}. This is used by certain
 		 * molds, such as accordion.
@@ -251,6 +258,7 @@ zul.tab.Tabbox = zk.$extends(zul.Widget, {
 		for (var btn, key = ['right', 'left', 'down', 'up'], le = key.length; le--;) 
 			if (btn = this.$n(key[le])) 				
 				this.domListen_(btn, 'onClick', '_doClick', key[le]);
+		this._fixMaxHeight();
 	},
 	unbind_: function () {
 		zWatch.unlisten({onResponse: this});
@@ -388,5 +396,36 @@ zul.tab.Tabbox = zk.$extends(zul.Widget, {
 		this.$supers('setHeight', arguments);
 		if (this.desktop)
 			zUtl.fireSized(this, -1); //no beforeSize
+	},
+	
+	_fixMaxHeight: function() {
+		var tabbox = this;
+		if (tabbox && !tabbox.z_rod && tabbox._maximalHeight) {
+			var max = 0,
+				pnls = tabbox.getTabpanels(),
+				fc = pnls.firstChild;
+			var getPanel = function(panelwgt) {
+				return !tabbox.inAccordionMold() ? panelwgt.$n() : panelwgt.$n('cave');
+			}
+			for(var c = fc; c; c = c.nextSibling) {
+				if(!c || !getPanel(c)) 
+					return;
+			}
+			
+			for(var c = fc; c; c = c.nextSibling) {
+				var panel = getPanel(c);
+				if (panel) {
+					var hgh = jq(panel).outerHeight();
+					if (hgh > max)
+						max = hgh;
+				}
+			}
+			
+			for(var c = fc; c; c = c.nextSibling) {
+				var panel = getPanel(c);
+				if (panel)
+					panel.style.height = jq.px0(max);
+			}
+		}
 	}
 });
