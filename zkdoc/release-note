@@ -23,6 +23,8 @@ ZK 7.0.0
   ZK-1924: Clients.scrollIntoView(Component comp) could also adjust horizontal scroll position
   ZK-1991: AMedia FileDownload support ignore add Content-Disposition to header
   ZK-1974: Tabbox support take maximal size of all children tabpanels
+  ZK-2002: Tabbox support ListModel
+  ZK-1856: Tree support frozen as grid
   
 * Bugs
   ZK-1683: endless loop AU-loop in Grid, on Render Exception
@@ -59,6 +61,7 @@ ZK 6.5.5
   ZK-1969: listbox rod with paging mold causes incorrect keyboard navigation
   ZK-1979: Server push doesn't work when open 2 browser tab
   ZK-1955: Impossible to use onblur or onfocus on composite component
+  ZK-1997: Portallayout drag&drop element to the same position. onPortalMove event provided with wrong data
   ZK-1985: strict client site date parsing allows certain characters
   ZK-1924: Clients.scrollIntoView(Component comp) could also adjust horizontal scroll position
   ZK-1998: Listbox using GroupsModel sometimes would not update the select all status
