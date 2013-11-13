@@ -1285,7 +1285,8 @@ zk.log('value is", value);
 		agent = zk.agent = navigator.userAgent.toLowerCase();
 	zk.safari = browser.safari && _ver(browser.version);
 	zk.opera = browser.opera && _ver(browser.version);
-	zk.ff = zk.gecko = browser.mozilla && _ver(browser.version);
+	zk.ff = zk.gecko = browser.mozilla 
+		&& (agent.indexOf('trident') < 0) && _ver(browser.version);
 	zk.ios = zk.safari && /iphone|ipad|ipod/.test(agent);
 	zk.android = zk.safari && (agent.indexOf('android') >= 0);
 	zk.mobile = zk.ios || zk.android;
@@ -1294,6 +1295,7 @@ zk.log('value is", value);
 	zk.chrome = zk.safari && agent.indexOf('chrome') >= 0;
 	zk.safari_ = zk.safari && !zk.chrome; // safari only
 	zk.css3 = true;
+	var ie11 = browser.mozilla && (agent.indexOf('trident') >= 0) && _ver(browser.version);
 	
 	zk.vendor = zk.safari ? 'webkit' : '';
 
@@ -1311,6 +1313,9 @@ zk.log('value is", value);
 		zk.iex = browser.msie && _ver(browser.version); //browser version
 			//zk.iex is the Browser Mode (aka., Compatibility View)
 			//while zk.ie is the Document Mode
+		if (!zk.iex && ie11) 
+			zk.iex = ie11;
+		
 		if (zk.iex) {
 			if ((zk.ie = document.documentMode||zk.iex) < 6) //IE7 has no documentMode
 				zk.ie = 6; //assume quirk mode
