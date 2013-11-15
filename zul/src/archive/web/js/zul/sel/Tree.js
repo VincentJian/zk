@@ -29,17 +29,14 @@ zul.sel.Tree = zk.$extends(zul.sel.SelectWidget, {
 	_scrollbar: null,
 	_barPos: null,
 	unbind_: function () {
-		var bar = this._scrollbar;
-		if (bar) {
-			scrollPosition = bar.getCurrentPosition();
-			bar.destroy();
-			bar = this._scrollbar = null;
-		}
+		this.destroyBar_();
 		this.$supers(Tree, 'unbind_', arguments);
 	},
 	onSize: function () {
 		this.$supers(Tree, 'onSize', arguments);
 		var self = this;
+		if (this._shallSyncFrozen && this.frozen)
+			this.frozen.onSize();
 		setTimeout(function () {
 			if (self.desktop && !self._nativebar) {
 				if (!self._scrollbar)
@@ -63,6 +60,13 @@ zul.sel.Tree = zk.$extends(zul.sel.SelectWidget, {
 				frozen._doScrollNow(start);
 				bar.setBarPosition(start);
 			}
+		}
+	},
+	destroyBar_: function () {
+		var bar = this._scrollbar;
+		if (bar) {
+			bar.destroy();
+			bar = this._scrollbar = null;
 		}
 	},
 	/**

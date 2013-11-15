@@ -544,8 +544,8 @@ public class Tree extends MeshElement {
 						renderer.doFinally();
 					}
 				}
-				invalidate();
 			}
+				invalidate();
 		}
 
 		
