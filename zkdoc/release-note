@@ -41,6 +41,7 @@ ZK 7.0.0
   ZK-1709: no <idspace> tag definition in zul.xsd
   ZK-1902: zk.xml theme-provider-class not invoked
   ZK-2020: Textbox became unmodifiable in IE11 when invalidated
+  ZK-2026: Datebox always displays the current year when blurred if format = "MM.yyyy"
 
 * Upgrade Notes
   + org.zkoss.util.logging.Log class and org.zkoss.util.logging.config.file library-property
@@ -52,6 +53,7 @@ ZK 7.0.0
   Specification that some of high-end application servers may prohibit the creation of new threads.
   + deprecated all the classes under org.zkoss.zkplus.databind package
   + deprecated all the classes under org.zkoss.zkplus.acegi package
+  + change the addon-name of zkplus jar from 'databind' to 'zkplus'
 
   --------
 ZK 6.5.5
@@ -82,6 +84,9 @@ ZK 6.5.5
   ZK-2001: Focus to a chosenbox that place in a listbox shall not change listbox selection
   ZK-1834: Listbox scroll bug (re-fix)
   ZK-2021: Combobox autocomplete performance degrading quadratically with increasing number of comboitems
+  ZK-2015: Change the visible of cell component sometimes will fail (IE10 only)
+  ZK-2022: appending a component after its removal fails to initialize bindings
+  ZK-2025: Extends ZK component with lang-addon.xml file, zkbind feature doesn't work
 
   --------
 
