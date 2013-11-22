@@ -1,0 +1,9 @@
+<zk>
+	<div style="border: 1px solid red;" hflex="1" vflex="1">
+		<label multiline="true">
+			1. Shrink the browser window.
+			2. When scrollbar apprears, stop shrink.
+			3. Should not see the scrollbar.
+		</label>
+	</div>
+</zk>
