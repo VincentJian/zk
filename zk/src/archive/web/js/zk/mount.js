@@ -612,7 +612,8 @@ jq(function() {
 			zWatch.fire('beforeSize'); //notify all
 			zWatch.fire('onFitSize', null, {reverse:true}); //notify all
 			zWatch.fire('onSize'); //notify all
-			_reszInf.lastTime = jq.now() + 8;
+			// B70-ZK-2030: Prevent _sizeHandler ignore some resize events. 
+			_reszInf.lastTime = jq.now();
 		} finally {
 			_reszInf.inResize = false;
 		}
