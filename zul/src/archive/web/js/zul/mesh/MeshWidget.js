@@ -133,9 +133,9 @@ it will be useful, but WITHOUT ANY WARRANTY.
 				if (zk.ie < 8 && max < wd) {
 					max = wd;
 					maxj = i;
-				} else if (zk.ff > 4 || zk.ie9) {// firefox4 & IE9 & IE10 still cause break line in case B50-3147926 column 1
+				} else if (zk.ff > 4 || zk.ie > 8) // firefox4 & IE9, 10, 11 still cause break line in case B50-3147926 column 1
 					++wds[i];
-				}
+				
 				if (zk.ie < 8) // B50-ZK-206
 					wds[i] += 2;
 				width += wds[i]; // using wds[i] instead of wd for B50-3183172.zul
@@ -153,7 +153,7 @@ it will be useful, but WITHOUT ANY WARRANTY.
 					if (zk.ie < 8 && max < wd) {
 						max = wd;
 						maxj = i;
-					} else if (zk.ff > 4 || zk.ie9) // firefox4 & IE9 & IE10 still cause break line in case B50-3147926 column 1
+					} else if (zk.ff > 4 || zk.ie > 8) // firefox4 & IE9 & IE10 still cause break line in case B50-3147926 column 1
 						++wds[i];
 					if (zk.ie < 8) // B50-ZK-206
 						wds[i] += 2;
@@ -889,9 +889,9 @@ zul.mesh.MeshWidget = zk.$extends(zul.Widget, {
 		var t = zul.mesh.Scrollbar.getScrollPosV(this),
 			l = ebody.scrollLeft,
 			scrolled = (t != this._currentTop || l != this._currentLeft);
-		if (scrolled && 
-				// Bug ZK-353 ignore in rod
-				!this._listbox$rod && !this._grid$rod) {
+		
+		// ZK-2046: should sync currentTop in rod mode see also Bug ZK-353
+		if (scrolled /* && !this._listbox$rod && !this._grid$rod*/) {
 			this._currentTop = t; 
 		}
 		

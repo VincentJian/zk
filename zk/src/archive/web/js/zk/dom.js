@@ -752,6 +752,10 @@ jq(el).zk.sumStyles("lr", jq.paddings);
 					elst.display = "none";
 					elst.visibility = oldvisi;
 				}
+				if (zk.ie11_) {// fix ie11 float number issue for ZTL B50-3298164
+					b[0] = Math.ceil(b[0]);
+					b[1] = Math.ceil(b[1]);
+				}
 				return b;
 				// IE adds the HTML element's border, by default it is medium which is 2px
 				// IE 6 and 7 quirks mode the border width is overwritable by the following css html { border: 0; }
@@ -885,7 +889,7 @@ jq(el).zk.sumStyles("lr", jq.paddings);
 	toStyleOffset: function (x, y) {
 		var el = this.jq[0],
 			oldx = el.style.left, oldy = el.style.top,
-			resetFirst = zk.opera || zk.air || zk.ie8;
+			resetFirst = zk.opera || zk.air || zk.ie > 7; // don't use zk.ie8 which is not including ie 11
 		//Opera:
 		//1)we have to reset left/top. Or, the second call position wrong
 		//test case: Tooltips and Popups
