@@ -669,8 +669,8 @@ zul.sel.SelectWidget = zk.$extends(zul.mesh.MeshWidget, {
 		this.updateFormData();
 		this._updHeaderCM();
 		
-		// Bug ZK-395(B50-ZK-272.zul), if no items, in opera it will appear a scrollbar
-		if (btn && zk.opera && !this.getBodyWidgetIterator().hasNext())
+		// Bug ZK-398, ZK-272, ZK-242, if no items, in opera, ie > 8 it will appear a scrollbar
+		if (btn && (zk.opera || zk.ie > 8) && !this.getBodyWidgetIterator().hasNext())
 			btn.style.top = "-1px";
 	},
 	unbind_: function () {
@@ -1259,8 +1259,13 @@ zul.sel.SelectWidget = zk.$extends(zul.mesh.MeshWidget, {
 	onChildRemoved_: function (child) {
 		this.$supers('onChildRemoved_', arguments);
 		var selItems = this._selItems, len;
-		if (this.desktop && child.$instanceof(zul.sel.ItemWidget) && (len = selItems.length))
-			this._syncFocus(selItems[len - 1]);
+		if (this.desktop && child.$instanceof(zul.sel.ItemWidget) && (len = selItems.length)) {
+			//B65-ZK-1954: Sync focus after the item have been removed to prevent the scrollbar display issue.
+			if (child == this.lastItem)
+				this._syncFocus(this.lastChild);
+			else
+				this._syncFocus(selItems[len - 1]);
+		}
 	},
 	//@Override
 	replaceWidget: function (newwgt) {

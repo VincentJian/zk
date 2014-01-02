@@ -302,7 +302,6 @@ zul.db.Datebox = zk.$extends(zul.inp.FormatWidget, {
 			this.getInputNode().style.width = '';
 		this.syncWidth();
 	},
-
 	getZclass: function () {
 		var zcs = this._zclass;
 		return zcs != null ? zcs: "z-datebox" + (this.inRoundedMold() ? "-rounded": "");
@@ -492,7 +491,7 @@ zul.db.Datebox = zk.$extends(zul.inp.FormatWidget, {
 			this.domListen_(btn, zk.android ? 'onTouchstart' : 'onClick', '_doBtnClick');
 		}
 
-		zWatch.listen({onSize: this});
+		zWatch.listen({onSize: this, onScroll: this});
 		this._pop.setFormat(this.getDateFormat());
 	},
 	unbind_: function () {
@@ -506,7 +505,7 @@ zul.db.Datebox = zk.$extends(zul.inp.FormatWidget, {
 			this.domUnlisten_(btn, zk.android ? 'onTouchstart' : 'onClick', '_doBtnClick');
 		}
 
-		zWatch.unlisten({onSize: this});
+		zWatch.unlisten({onSize: this, onScroll: this});
 		this.$supers(Datebox, 'unbind_', arguments);
 	},
 	_doBtnClick: function (evt) {
@@ -532,6 +531,14 @@ zul.db.Datebox = zk.$extends(zul.inp.FormatWidget, {
 		if (!data.value && inpValue
 				&& this.getFormat() && this._cst == "[c")
 			data.value = inpValue;
+	},
+	onScroll: function (wgt) {
+		// ZK-1552: fix the position of popup when scroll
+		if (wgt && (pp = this._pop))
+			if (zk(this).isScrollIntoView())
+				_reposition(this, true);
+			else
+				pp.close();
 	},
 	/** Returns the label of the time zone
 	 * @return String
@@ -576,13 +583,12 @@ zul.db.CalendarPop = zk.$extends(zul.db.Calendar, {
 	setLocalizedSymbols: function (symbols) {
 		this._localizedSymbols = symbols;
 	},
-	//B65-ZK-1904: Does not need to sync shadow in rerender, it syncs in _reposition function
-	/*
+	// ZK-2047: should sync shadow when shiftView
 	rerender: function () {
 		this.$supers('rerender', arguments);
 		if (this.desktop) this.syncShadow();
 	},
-	*/
+	
 	close: function (silent) {
 		var db = this.parent,
 			pp = db.$n("pp");
@@ -656,8 +662,10 @@ zul.db.CalendarPop = zk.$extends(zul.db.Calendar, {
 		zk(pp).position(inp, "after_start");
 		delete db._shortcut;
 		
+		var self = this;
 		setTimeout(function() {
 			_reposition(db, silent);
+			zWatch.fireDown('onVParent', self.parent.$n('pp'), { shadow: self._shadow });
 		}, 150);
 		//IE, Opera, and Safari issue: we have to re-position again because some dimensions
 		//in Chinese language might not be correct here.

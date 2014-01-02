@@ -177,15 +177,25 @@ zul.wgt.Button = zk.$extends(zul.LabelImageWidget, {
 		    	return v;
 		    }, 
 		    function (v, opts) {
-		    	if (this.desktop) {
-		    		if (this._mold == "os") {
-		    			var n = this.$n(),
-							zclass = this.getZclass();
-		    			if (zclass)
-		    				jq(n)[(n.disabled = v) ? "addClass": "removeClass"](zclass + "-disd");
-		    		} else
-		    			this.rerender(opts && opts.skip ? -1 : 0); //bind and unbind required (because of many CSS classes to update)
-		    	}
+		    	var mold = this._mold;
+		    	if (mold == "os" || mold == "default") {
+		    		var n = this.$n(),
+						zclass = this.getZclass(),
+						self = this,
+						doDisable = function() {
+		    				if (self.desktop) {
+		    					var updateClass = (n.disabled = v) ? "addClass": "removeClass";
+		    					jq(n)[updateClass](zclass + "-disd");
+		    				}
+		    			};
+		    		// ZK-2042: delay the setting when the button's type is submit
+		    		if (this._type == 'submit') 
+		    			setTimeout(doDisable, 50);
+		    		else
+		    			doDisable();
+		    	} else if (this.desktop)
+	    			this.rerender(opts && opts.skip ? -1 : 0); //bind and unbind required (because of many CSS classes to update)
+		    	
 		    }
 		],
 		image: function (v) {
@@ -465,8 +475,8 @@ zul.wgt.Button = zk.$extends(zul.LabelImageWidget, {
 			var zcls = this.getZclass();
 			jq(this.$n('box')).addClass(zcls + "-clk")
 				.addClass(zcls + "-over")
-			if (!(zk.ie < 11) || !this._uplder) zk(this.$n('btn')).focus(30);
-				//change focus will disable upload in IE
+			if (!zk.ie || !this._uplder) zk(this.$n('btn')).focus(30);
+				// ZK-2044: change focus will disable upload in IE
 		}
 		zk.mouseCapture = this; //capture mouse up
 		this.$supers('doMouseDown_', arguments);

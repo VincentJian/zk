@@ -17,16 +17,16 @@ Copyright (C) 2006 Potix Corporation. All Rights Reserved.
 	<!-- The name of this addon. It must be unique -->
 	<addon-name>databind</addon-name>
 	<!-- Specifies what other addon this depends
-	<depends></depends>
 	-->
+	<depends>zkbind,zkex,zkmax</depends>
 
 	<!-- Which language this addon will be added to -->
 	<language-name>xul/html</language-name>
 
 	<version>
 		<version-class>org.zkoss.zkplus.Version</version-class>
-		<version-uid>6.5.5</version-uid>
-		<zk-version>6.5.5</zk-version><!-- or later -->
+		<version-uid>6.5.6</version-uid>
+		<zk-version>6.5.6</zk-version><!-- or later -->
 	</version>
 
 	<zscript language="Java">

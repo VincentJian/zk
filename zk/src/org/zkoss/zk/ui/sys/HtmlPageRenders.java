@@ -25,12 +25,15 @@ import java.util.Collection;
 import java.io.Writer;
 import java.io.StringWriter;
 import java.io.IOException;
+import java.lang.reflect.Field;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
+import org.zkoss.lang.Classes;
 import org.zkoss.lang.Library;
 import org.zkoss.lang.Strings;
+import org.zkoss.mesg.Messages;
 import org.zkoss.io.Files;
 import org.zkoss.web.fn.ServletFns;
 import org.zkoss.html.JavaScript;
@@ -105,6 +108,16 @@ public class HtmlPageRenders {
 	private static final String ATTR_DESKTOP_VISIBILITYCHANGE = "org.zkoss.desktop.visibilitychange.enabled";
 	/** Support Portlet 2.0 */
 	private static final String ATTR_PORTLET2_RESOURCEURL = "org.zkoss.portlet2.resourceURL";
+	
+	/**
+	* Set this library property to false to hide the zk version info.
+	* @since 6.5.5
+	*/
+	private final static String ZK_VERSION_INFO_ENABLED_KEY = "org.zkoss.zk.ui.versionInfo.enabled";
+	
+	private static volatile int msgCode = -1;
+	
+
 
 	/** Sets the content type to the specified execution for the given page.
 	 * @param exec the execution (never null)
@@ -257,15 +270,18 @@ public class HtmlPageRenders {
 		for (JavaScript js: jses)
 			append(sb, js);
 
-		sb.append("\n<!-- ZK ").append(wapp.getVersion());
-		if (WebApps.getFeature("ee"))
-			sb.append(" EE");
-		else if (WebApps.getFeature("pe"))
-			sb.append(" PE");
-		sb.append(' ').append(wapp.getBuild());
-		Object o = wapp.getAttribute("org.zkoss.zk.ui.notice");
-		if (o != null) sb.append(o);
-		sb.append(" -->\n");
+		// F65-ZK-2061: Check if user want to show or hide zk version info.
+		if ("true".equals(Library.getProperty(ZK_VERSION_INFO_ENABLED_KEY, "true"))) {
+			sb.append("\n<!-- ZK ").append(wapp.getVersion());
+			if (WebApps.getFeature("ee"))
+				sb.append(" EE");
+			else if (WebApps.getFeature("pe"))
+				sb.append(" PE");
+			sb.append(' ').append(wapp.getBuild());
+			Object o = wapp.getAttribute("org.zkoss.zk.ui.notice");
+			if (o != null) sb.append(o);
+			sb.append(" -->\n");
+		}
 
 		int tmout = 0;
 		final Boolean autoTimeout = getAutomaticTimeout(desktop);
@@ -651,7 +667,22 @@ public class HtmlPageRenders {
 	throws IOException {
 		out.write("<div");
 		writeAttr(out, "id", uuid);
-		out.write(" class=\"z-temp\"><div id=\"zk_proc\" class=\"z-loading\"><div class=\"z-loading-indicator\"><span class=\"z-loading-icon\"></span>Processing...</div></div>");
+		out.write(" class=\"z-temp\"><div id=\"zk_proc\" class=\"z-loading\"><div class=\"z-loading-indicator\">" + 
+				// B65-ZK-1852: Displays localized loading label.
+				"<span class=\"z-loading-icon\"></span>" + getLoadingLabel() + "</div></div>");
+	}
+	private static String getLoadingLabel() {
+		if (msgCode == -1) {
+			try {
+				Class<?> msgClass = Classes.forNameByThread("org.zkoss.zul.mesg.MZul");
+				Field msgField = msgClass.getField("PLEASE_WAIT");
+				msgCode = msgField.getInt(null);
+			} catch (Throwable ex) {
+				return "Processing...";
+			}
+		}
+		// B70-ZK-1852: Returns the localized label.
+		return msgCode != -1 ? Messages.get(msgCode) : "Processing...";
 	}
 	private static void outDivTemplateEnd(Page page, Writer out)
 	throws IOException {
@@ -1039,7 +1070,10 @@ public class HtmlPageRenders {
 		boolean included) {
 			this.temp = temp;
 			this.perm = perm;
-			this.crawlable = crawlable;
+			if (crawlable && WebApps.getFeature("ee")) {
+				this.crawlable = crawlable;
+			} else
+				this.crawlable = false;
 			this.included = included;
 		}
 	}

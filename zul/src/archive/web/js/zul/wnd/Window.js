@@ -141,7 +141,7 @@ it will be useful, but WITHOUT ANY WARRANTY.
 			_posByParent(wgt);
 
 		$n.makeVParent();
-		zWatch.fireDown("onVParent", this);
+		zWatch.fireDown("onVParent", wgt);
 
 		wgt.zsync();
 		_updDomPos(wgt);
@@ -155,7 +155,7 @@ it will be useful, but WITHOUT ANY WARRANTY.
 		if (pos == "parent") _posByParent(wgt);
 
 		$n.makeVParent();
-		zWatch.fireDown("onVParent", this);
+		zWatch.fireDown("onVParent", wgt);
 
 		wgt.zsync();
 		_updDomPos(wgt, true, false, true);
@@ -1161,9 +1161,9 @@ zul.wnd.Window = zk.$extends(zul.Widget, {
 			this._mask = null;
 		}
 
-		// ZK-1951 Page becomes blank after detaching a modal window having an iframe loaded with PDF in IE 10
+		// ZK-1951, ZK-2045: Page becomes blank after detaching a modal window having an iframe loaded with PDF in IE > 9
 		// A workaround is to hide the iframe before remove
-		if (zk.ie == 10) {
+		if (zk.ie > 9) {
 			var $jq = jq(this.$n()).find('iframe');
 			if ($jq.length)
 				$jq.hide().remove();

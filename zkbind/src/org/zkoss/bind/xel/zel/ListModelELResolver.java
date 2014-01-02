@@ -76,7 +76,7 @@ public class ListModelELResolver extends ELResolver {
         return null;
     }
 
-    
+    @SuppressWarnings("unchecked")
     public void setValue(ELContext context, Object base, Object property,
             Object value) throws NullPointerException,
             PropertyNotFoundException, PropertyNotWritableException,

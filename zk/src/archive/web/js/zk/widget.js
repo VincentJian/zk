@@ -2130,7 +2130,7 @@ out.push('</div>');
 			zk.error("Mold "+this._mold+" not found in "+this.className);
 		}
 	},
-	/* Utilities for handling the so-called render defer ({@link #setRenderdefer}).
+	/** Utilities for handling the so-called render defer ({@link #setRenderdefer}).
 	 * This method is called automatically by {@link #redraw},
 	 * so you only need to use it if you override {@link #redraw}.
 	 * <p>A typical usage is as follows.
@@ -3065,9 +3065,9 @@ unbind_: function (skipper, after) {
 	// to overridden this method have to fix the IE9 issue (ZK-483)
 	// you can just add 1 px more for the offsetWidth
 	getChildMinSize_: function (attr, wgt) { //'w' for width or 'h' for height
-		// feature #ZK-314: zjq.minWidth function return extra 1px in IE9/10
+		// feature #ZK-314: zjq.minWidth function return extra 1px in IE9/10/11
 		var wd = zjq.minWidth(wgt);
-		if(zk.ie9 && zk.isLoaded('zul.wgt') && wgt.$instanceof(zul.wgt.Image)) {
+		if((zk.ie > 8) && zk.isLoaded('zul.wgt') && wgt.$instanceof(zul.wgt.Image)) {
 			wd = zk(wgt).offsetWidth();
 		}
 		return attr == 'h' ? zk(wgt).offsetHeight() : wd; //See also bug ZK-483
@@ -3386,9 +3386,11 @@ focus_: function (timeout) {
 			this.setTopmost();
 			return true;
 		}
-		for (var w = this.firstChild; w; w = w.nextSibling)
-			if (w.isVisible() && w.focus_(timeout))
+		for (var w = this.firstChild; w; w = w.nextSibling) {
+			//B65-ZK-2035: make sure the DOM element of child is real visible
+			if (w.isRealVisible() && w.focus_(timeout))
 				return true;
+		}
 		return false;
 	},
 	/** Checks if this widget can be activated (gaining focus and so on).

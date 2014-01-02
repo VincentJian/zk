@@ -1,10 +1,12 @@
   --------
 ZK 6.5.5
+Dec 30, 2013
 * Features
   ZK-1971: ZK wcs file shall exclude the css with zk logo image
   ZK-1973: Server processing effect can be configurable
   ZK-2012: zk.ie supports ie11
   ZK-2014: Listbox component support selectAll/unSelectAll event when check/uncheck on select all checkbox
+  ZK-2061: Security Issue: Version number inserted on each page
 
 * Bugs
   ZK-1944: AUTO scale does not work if the value of decimalebox is bind form VM
@@ -28,7 +30,26 @@ ZK 6.5.5
   ZK-1834: Listbox scroll bug (re-fix)
   ZK-2021: Combobox autocomplete performance degrading quadratically with increasing number of comboitems
   ZK-2015: Change the visible of cell component sometimes will fail (IE10 only)
-
+  ZK-2022: appending a component after its removal fails to initialize bindings
+  ZK-2025: Extends ZK component with lang-addon.xml file, zkbind feature doesn't work
+  ZK-2042: Button's autodisable="self" will cause to stop the form request processing
+  ZK-2044: Upload button does not always display the file selection dialog on IE11
+  ZK-2028: When deleted one selected item in chosenbox with ListSubModel, it would remove all the selection
+  ZK-2019: Chosenbox work incorrectly when using ListSubModel and Comparator
+  ZK-2045: Page becomes blank after detaching a modal window having an iframe loaded with PDF in IE 11
+  ZK-2051: Chrome rmDesktop not working reliably, causing a memory leak in Session
+  ZK-2046: Scroll position is reset to top if resize column of a grid with rod  
+  ZK-2047: IE Datebox calendar overlapping pdf problem
+  ZK-2004: The selected Objects of the Chosenbox is incorrect after replace model
+  ZK-2055: the page stop running when listitem or row bind with object
+  ZK-1552: Combobox and Datebox scroll position in Borderlayout
+  ZK-2035: Invalidate a Panel component with a button will cause a js error
+  ZK-1880: The images of the menu are cut in zksandbox window case
+  ZK-1892: Error when calling setCoords() in Area widget
+  ZK-1954: Vertical scroll appear when remove last listitem from Listbox
+  ZK-1965: zksandbox service.zul throw method getNamespace() not found exception
+  ZK-1852: Processing indicator briefly displayed in non-localized text
+  
   --------
 ZK 6.5.4
 Sep 24, 2013
@@ -150,6 +171,7 @@ Jul 02, 2013
   ZK-1822: Turkish locale problem during browser detection (on server side)
   ZK-1827: Component inside native component js error
   ZK-1834: Listbox scroll bug
+  ZK-2026: Datebox always displays the current year when blurred if format = "MM.yyyy"
   
   --------
 ZK 6.5.2
